@@ -44,7 +44,7 @@
       .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
       .status { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
       .status strong { color: var(--ok); }
-      input[type="file"], input[type="password"] {
+      input[type="password"] {
         background: var(--panel);
         color: var(--text);
         border: 1px solid var(--border);
@@ -52,6 +52,30 @@
         padding: 10px;
       }
       input[type="password"] { min-width: 240px; }
+      #file-input { display: none; }
+      .drop-zone {
+        margin-top: 10px;
+        border: 2px dashed #2f4f86;
+        border-radius: 12px;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 18px;
+        cursor: pointer;
+        background: linear-gradient(180deg, #0b152a, #0a1224);
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+      .drop-zone:hover { border-color: #4f7dd1; }
+      .drop-zone.dragover {
+        border-color: #7fb3ff;
+        background: linear-gradient(180deg, #112244, #0f1c35);
+      }
+      .drop-title { font-size: 15px; font-weight: 700; margin: 0; }
+      .drop-sub { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+      .file-name { margin: 8px 0 0; font-size: 12px; color: #b8d1ff; }
+      .upload-action { width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; }
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -112,11 +136,16 @@
           <input id="passcode-input" type="password" autocomplete="off" placeholder="Enter upload passcode" />
           <button id="unlock-btn" type="button">Unlock Upload</button>
         </div>
-        <div class="row" style="margin-top:10px;">
-          <input id="file-input" type="file" accept="image/*" />
-          <button id="upload-btn" type="button">Upload from Website</button>
-          <a id="open-github-upload" class="button-link" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
+        <input id="file-input" type="file" accept="image/*" />
+        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image files here or click to choose">
+          <div>
+            <p class="drop-title">Drag image here or click to choose file</p>
+            <p class="drop-sub">Use this to upload image to Cloudinary and get a hosted URL.</p>
+          </div>
         </div>
+        <p id="file-name" class="file-name">No file selected.</p>
+        <button id="upload-btn" class="upload-action" type="button">Upload Selected Image</button>
+        <a id="open-github-upload" class="button-link upload-action" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
         <p id="status" class="status">Ready.</p>
         <p class="tiny">Security note: this static site can gate uploads, but full private access needs a backend auth layer.</p>
       </section>
@@ -251,11 +280,50 @@
       async function boot() {
         const config = resolveConfig();
         const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileName = document.getElementById('file-name');
         const uploadBtn = document.getElementById('upload-btn');
         const githubBtn = document.getElementById('open-github-upload');
         const lockRow = document.getElementById('lock-row');
         const unlockBtn = document.getElementById('unlock-btn');
         const passcodeInput = document.getElementById('passcode-input');
+        let selectedFile = null;
+
+        function setSelectedFile(file) {
+          selectedFile = file || null;
+          if (selectedFile) {
+            fileName.textContent = `Selected: ${selectedFile.name}`;
+          } else {
+            fileName.textContent = 'No file selected.';
+          }
+        }
+
+        fileInput.addEventListener('change', () => {
+          setSelectedFile(fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            fileInput.click();
+          }
+        });
+        dropZone.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+          dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (event) => {
+          event.preventDefault();
+          dropZone.classList.remove('dragover');
+          const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+          const file = files && files[0] ? files[0] : null;
+          if (!file) return;
+          setSelectedFile(file);
+        });
 
         const hasCloudinary = Boolean(config.cloudinaryCloudName && config.cloudinaryUnsignedPreset);
         const hasPasscode = Boolean(config.uploadPasscodeHash);
@@ -270,9 +338,9 @@
           githubBtn.href = `https://github.com/${config.githubUser}/${config.githubRepo}/upload/${config.githubBranch}/${config.githubUploadFolder}`;
           githubBtn.style.display = 'inline-block';
           uploadBtn.disabled = true;
-          setStatus('Cloudinary not configured. Use Open GitHub Upload.');
+          setStatus('Website upload is off because Cloudinary is not configured. Use Open GitHub Upload.');
         } else if (hasCloudinary && !hasPasscode) {
-          setStatus('Upload ready. Pick a file and click Upload from Website.', true);
+          setStatus('Upload ready. This sends image to Cloudinary and returns a hosted URL you can use in any project.', true);
         } else if (hasCloudinary && hasPasscode) {
           setStatus('Upload locked. Enter passcode to unlock.');
         } else {
@@ -308,9 +376,13 @@
             return;
           }
 
-          const file = fileInput.files && fileInput.files[0];
+          const file = selectedFile || (fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
           if (!file) {
-            setStatus('Select an image file first.');
+            setStatus('Select or drag an image file first.');
+            return;
+          }
+          if (!(file.type || '').startsWith('image/')) {
+            setStatus('Only image files are allowed.');
             return;
           }
 
@@ -324,6 +396,7 @@
             renderCard(url, file.name, result.created_at || new Date().toISOString(), true);
             setStatus('Upload complete. First card has your direct URL.', true);
             fileInput.value = '';
+            setSelectedFile(null);
           } catch (err) {
             setStatus(`Upload error: ${err.message}`);
           } finally {

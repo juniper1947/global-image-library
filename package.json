@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "extract:images": "node scripts/extract-email-images.js"
+    "extract:images": "node scripts/extract-email-images.js",
+    "init:project": "node scripts/init-library-project.js"
   },
   "dependencies": {
     "express": "^4.19.2",

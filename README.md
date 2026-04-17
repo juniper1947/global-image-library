@@ -73,6 +73,12 @@ Use a project slug and keep images grouped by project:
 
 - `docs/uploads/<project-slug>/<filename>`
 
+Start every project with intake init (email, website URL, or screenshot project):
+
+```bash
+npm run init:project -- --project 2026-04-client-landing --type website --source https://client-site.example.com
+```
+
 Before upload, generate a traceable placement manifest:
 
 ```bash

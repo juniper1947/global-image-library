@@ -1,0 +1,14 @@
+{
+  "project": "2026-04-website-copy-sample",
+  "intakeType": "website",
+  "source": "https://example.com",
+  "notes": "",
+  "createdAt": "2026-04-17T19:45:19.511Z",
+  "uploadFolder": "docs/uploads/2026-04-website-copy-sample",
+  "status": "intake_started",
+  "requiredArtifacts": [
+    "project.json",
+    "upload-checklist.md",
+    "manifest.json (for email intake via extract:images)"
+  ]
+}

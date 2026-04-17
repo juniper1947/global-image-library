@@ -56,6 +56,17 @@ Setup once:
 After that, uploads from the website are direct and instant.
 If Cloudinary values are empty, the page automatically shows a GitHub upload fallback button.
 
+### Optional upload passcode
+You can require a passcode before website upload is enabled.
+
+1. Generate SHA-256 hash of your passcode
+2. Put the lowercase hash in `docs/config.js` as `uploadPasscodeHash`
+3. Commit and deploy
+
+Security note:
+- Passcode lock on a static page is a deterrent, not full security
+- For true private upload/access control, use a backend with authenticated signed uploads
+
 ### Direct image URL format
 `https://juniper1947.github.io/global-image-library/uploads/<filename>`
 

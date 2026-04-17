@@ -7,5 +7,10 @@ window.GIL_CONFIG = {
   // Optional
   cloudinaryFolder: "global-image-library",
   githubBranch: "main",
-  githubUploadFolder: "docs/uploads"
+  githubUploadFolder: "docs/uploads",
+
+  // Optional upload gate:
+  // Put a SHA-256 hex hash of your passcode (lowercase). Leave blank to disable lock.
+  // Important: this is only a client-side gate, not full server-side security.
+  uploadPasscodeHash: ""
 };

@@ -5,42 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Global Image Library</title>
     <style>
-      :root { --bg:#f7fafc; --card:#fff; --text:#1f2937; --border:#e5e7eb; --link:#2563eb; --btn:#111827; --btn-alt:#1d4ed8; }
-      * { box-sizing:border-box; }
-      body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); }
-      .wrap { max-width:980px; margin:24px auto; padding:0 16px; }
-      h1 { margin:0 0 8px; }
-      .muted { color:#6b7280; margin:0 0 18px; }
-      .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin:0 0 14px; }
-      .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-      .status { margin:8px 0 0; font-size:13px; color:#374151; }
-      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
-      .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; }
-      img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
-      .name { margin:8px 0 4px; font-size:12px; overflow-wrap:anywhere; }
-      a { color:var(--link); font-size:12px; text-decoration:none; overflow-wrap:anywhere; }
-      .actions { display:flex; gap:8px; margin-top:8px; }
-      button, .button-link { margin-top:8px; width:100%; padding:8px; border:0; border-radius:8px; background:var(--btn); color:#fff; cursor:pointer; text-align:center; text-decoration:none; font-size:13px; }
-      .button-link { display:inline-block; background:var(--btn-alt); }
-      #open-github-upload { display:none; }
-      #upload-btn[disabled] { opacity:0.6; cursor:not-allowed; }
+      :root {
+        --bg: #070b16;
+        --bg-accent: #0d1425;
+        --card: #101a2e;
+        --panel: #0d1628;
+        --text: #f3f6ff;
+        --muted: #a4b1cd;
+        --border: #1f2d4a;
+        --link: #7fb3ff;
+        --btn: #1d4ed8;
+        --btn-hover: #1e40af;
+        --btn-alt: #243b65;
+        --ok: #37d39f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Inter", Arial, sans-serif;
+        background:
+          radial-gradient(900px 500px at 20% -10%, #153a7e33, transparent 65%),
+          radial-gradient(1200px 500px at 90% -20%, #2a6edc22, transparent 60%),
+          linear-gradient(180deg, var(--bg), #04070f);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .wrap { max-width: 1080px; margin: 28px auto; padding: 0 16px; }
+      h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 0.2px; }
+      .muted { color: var(--muted); margin: 0 0 18px; }
+      .panel {
+        background: linear-gradient(180deg, #0f1a30, #0a1222);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        margin: 0 0 16px;
+        box-shadow: 0 10px 30px #00000044;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+      .status { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+      .status strong { color: var(--ok); }
+      input[type="file"], input[type="password"] {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+      }
+      input[type="password"] { min-width: 240px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: linear-gradient(180deg, #111c33, #0a1326);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px;
+      }
+      img {
+        width: 100%;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #0b1324;
+      }
+      .name { margin: 8px 0 4px; font-size: 12px; overflow-wrap: anywhere; }
+      .date { margin: 0 0 6px; color: var(--muted); font-size: 12px; }
+      a {
+        color: var(--link);
+        font-size: 12px;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+        line-height: 1.45;
+      }
+      button, .button-link {
+        margin-top: 8px;
+        width: 100%;
+        padding: 10px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--btn);
+        color: #fff;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      button:hover, .button-link:hover { background: var(--btn-hover); }
+      #unlock-btn, #open-github-upload { background: var(--btn-alt); }
+      #open-github-upload { display: none; }
+      #upload-btn[disabled], #unlock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+      .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; }
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Global Image Library</h1>
-      <p class="muted">Direct links below are email-ready image URLs. Upload uses Cloudinary when configured.</p>
+      <p class="muted">Dark mode gallery with direct URLs and upload-date labels.</p>
+
       <section class="panel">
         <strong>Upload Image</strong>
-        <div class="row">
+        <div id="lock-row" class="row" style="margin-top:10px; display:none;">
+          <input id="passcode-input" type="password" autocomplete="off" placeholder="Enter upload passcode" />
+          <button id="unlock-btn" type="button">Unlock Upload</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
           <input id="file-input" type="file" accept="image/*" />
           <button id="upload-btn" type="button">Upload from Website</button>
           <a id="open-github-upload" class="button-link" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
         </div>
         <p id="status" class="status">Ready.</p>
+        <p class="tiny">Security note: this static site can gate uploads, but full private access needs a backend auth layer.</p>
       </section>
+
       <div id="grid" class="grid"></div>
     </div>
+
     <script src="./config.js"></script>
     <script>
       function getDefaultConfig() {
@@ -55,7 +138,8 @@
           githubUser: user,
           githubRepo: repo,
           githubBranch: 'main',
-          githubUploadFolder: 'docs/uploads'
+          githubUploadFolder: 'docs/uploads',
+          uploadPasscodeHash: ''
         };
       }
 
@@ -65,14 +149,43 @@
         return { ...defaults, ...provided };
       }
 
-      function renderCard(url, name, prepend = false) {
+      function setStatus(text, ok = false) {
+        const el = document.getElementById('status');
+        el.innerHTML = ok ? `<strong>${text}</strong>` : text;
+      }
+
+      function formatDate(input) {
+        if (!input) return 'Uploaded: unknown';
+        const date = new Date(input);
+        if (Number.isNaN(date.getTime())) return 'Uploaded: unknown';
+        return `Uploaded: ${date.toLocaleString()}`;
+      }
+
+      async function sha256Hex(value) {
+        const data = new TextEncoder().encode(value);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      async function getLastModifiedForImage(url) {
+        try {
+          const res = await fetch(url, { method: 'HEAD' });
+          if (!res.ok) return null;
+          return res.headers.get('last-modified');
+        } catch {
+          return null;
+        }
+      }
+
+      function renderCard(url, name, uploadedAt, prepend = false) {
         const grid = document.getElementById('grid');
         const card = document.createElement('article');
         card.className = 'card';
         const fullUrl = new URL(url, location.href).href;
         card.innerHTML = `
-          <img src="${fullUrl}" alt="${name}" />
+          <img src="${fullUrl}" alt="${name}" loading="lazy" />
           <p class="name">${name}</p>
+          <p class="date">${formatDate(uploadedAt)}</p>
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <button type="button">Copy Direct URL</button>
         `;
@@ -81,15 +194,9 @@
           card.querySelector('button').textContent = 'Copied';
           setTimeout(() => card.querySelector('button').textContent = 'Copy Direct URL', 1200);
         });
-        if (prepend && grid.firstChild) {
-          grid.insertBefore(card, grid.firstChild);
-        } else {
-          grid.appendChild(card);
-        }
-      }
 
-      function setStatus(text) {
-        document.getElementById('status').textContent = text;
+        if (prepend && grid.firstChild) grid.insertBefore(card, grid.firstChild);
+        else grid.appendChild(card);
       }
 
       async function uploadToCloudinary(file, config) {
@@ -97,9 +204,7 @@
         const body = new FormData();
         body.append('file', file);
         body.append('upload_preset', config.cloudinaryUnsignedPreset);
-        if (config.cloudinaryFolder) {
-          body.append('folder', config.cloudinaryFolder);
-        }
+        if (config.cloudinaryFolder) body.append('folder', config.cloudinaryFolder);
 
         const res = await fetch(endpoint, { method: 'POST', body });
         if (!res.ok) {
@@ -114,41 +219,81 @@
         const fileInput = document.getElementById('file-input');
         const uploadBtn = document.getElementById('upload-btn');
         const githubBtn = document.getElementById('open-github-upload');
+        const lockRow = document.getElementById('lock-row');
+        const unlockBtn = document.getElementById('unlock-btn');
+        const passcodeInput = document.getElementById('passcode-input');
 
         const hasCloudinary = Boolean(config.cloudinaryCloudName && config.cloudinaryUnsignedPreset);
+        const hasPasscode = Boolean(config.uploadPasscodeHash);
+
+        let unlocked = !hasPasscode;
+        if (hasPasscode) {
+          lockRow.style.display = 'flex';
+          uploadBtn.disabled = true;
+        }
+
         if (!hasCloudinary && config.githubUser && config.githubRepo) {
           githubBtn.href = `https://github.com/${config.githubUser}/${config.githubRepo}/upload/${config.githubBranch}/${config.githubUploadFolder}`;
           githubBtn.style.display = 'inline-block';
           uploadBtn.disabled = true;
-          setStatus('Cloudinary not configured yet. Use Open GitHub Upload for now.');
-        } else if (hasCloudinary) {
-          setStatus('Cloudinary upload ready. Pick a file and click Upload from Website.');
+          setStatus('Cloudinary not configured. Use Open GitHub Upload.');
+        } else if (hasCloudinary && !hasPasscode) {
+          setStatus('Upload ready. Pick a file and click Upload from Website.', true);
+        } else if (hasCloudinary && hasPasscode) {
+          setStatus('Upload locked. Enter passcode to unlock.');
         } else {
           uploadBtn.disabled = true;
           setStatus('Upload not configured. Set config in docs/config.js.');
         }
 
+        unlockBtn.addEventListener('click', async () => {
+          const entered = passcodeInput.value.trim();
+          if (!entered) {
+            setStatus('Enter passcode first.');
+            return;
+          }
+          unlockBtn.disabled = true;
+          try {
+            const hash = await sha256Hex(entered);
+            if (hash === config.uploadPasscodeHash.toLowerCase()) {
+              unlocked = true;
+              uploadBtn.disabled = !hasCloudinary;
+              passcodeInput.value = '';
+              setStatus('Upload unlocked for this session.', true);
+            } else {
+              setStatus('Wrong passcode.');
+            }
+          } finally {
+            unlockBtn.disabled = false;
+          }
+        });
+
         uploadBtn.addEventListener('click', async () => {
+          if (hasPasscode && !unlocked) {
+            setStatus('Upload is locked. Enter passcode first.');
+            return;
+          }
+
           const file = fileInput.files && fileInput.files[0];
           if (!file) {
             setStatus('Select an image file first.');
             return;
           }
+
           try {
             uploadBtn.disabled = true;
             setStatus('Uploading...');
             const result = await uploadToCloudinary(file, config);
             const url = result.secure_url || result.url;
-            if (!url) {
-              throw new Error('No URL returned by Cloudinary.');
-            }
-            renderCard(url, file.name, true);
-            setStatus('Upload complete. Direct URL is shown in the first card.');
+            if (!url) throw new Error('No URL returned by Cloudinary.');
+
+            renderCard(url, file.name, result.created_at || new Date().toISOString(), true);
+            setStatus('Upload complete. First card has your direct URL.', true);
             fileInput.value = '';
           } catch (err) {
             setStatus(`Upload error: ${err.message}`);
           } finally {
-            if (hasCloudinary) uploadBtn.disabled = false;
+            uploadBtn.disabled = !(hasCloudinary && (!hasPasscode || unlocked));
           }
         });
 
@@ -156,13 +301,16 @@
           const res = await fetch('./images.json');
           const files = await res.json();
           for (const name of files) {
-            const url = `./uploads/${encodeURIComponent(name)}`;
-            renderCard(url, name);
+            const relative = `./uploads/${encodeURIComponent(name)}`;
+            const absolute = new URL(relative, location.href).href;
+            const modified = await getLastModifiedForImage(absolute);
+            renderCard(relative, name, modified);
           }
-        } catch (_e) {
-          setStatus('Could not load images.json, but upload tools are still available.');
+        } catch {
+          setStatus('Could not load images.json, but upload tools are available.');
         }
       }
+
       boot();
     </script>
   </body>

@@ -1,11 +1,4 @@
 [
-  "01-hero-training-hub.png",
-  "02-step-1-sign-up.png",
-  "03-step-2-create-account.png",
-  "04-step-3-set-name.png",
-  "05-feature-staff-courses.png",
-  "06-feature-team-calendar.png",
-  "07-feature-discussion-announcements.png",
   {
     "path": "2026-04-pxp-email-template-assets/01-header-logo-storage-googleapis-msgsndr-69615410cef10154ccb18495.png",
     "displayName": "PXP Header Logo (Email)",
@@ -23,5 +16,12 @@
     "displayName": "Powered X Prayer Logo 1080 PNG (Local Source)",
     "uploadedAt": "2026-04-17T20:01:54.379Z",
     "sourceUrl": "local:/Users/kone/Documents/Email pxp Marketing/images/powered-x-prayer-logo-email-1080.png"
-  }
+  },
+  "01-hero-training-hub.png",
+  "02-step-1-sign-up.png",
+  "03-step-2-create-account.png",
+  "04-step-3-set-name.png",
+  "05-feature-staff-courses.png",
+  "06-feature-team-calendar.png",
+  "07-feature-discussion-announcements.png"
 ]

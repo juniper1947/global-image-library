@@ -1,6 +1,6 @@
-# Basic Simple Image Hosting Site
+# Global Image Library
 
-A very simple image-hosting web app.
+A simple reusable image-hosting web app for all projects.
 
 ## Features
 - Upload image files (jpg, png, webp, gif, svg)
@@ -10,7 +10,7 @@ A very simple image-hosting web app.
 ## Setup
 
 ```bash
-cd image-hosting-site
+cd global-image-library
 npm install
 npm start
 ```

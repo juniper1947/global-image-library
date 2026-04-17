@@ -1,5 +1,5 @@
 {
-  "name": "basic-image-hosting-site",
+  "name": "global-image-library",
   "version": "1.0.0",
   "description": "Simple image hosting site with upload and public URLs",
   "main": "server.js",

@@ -5,47 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Global Image Library</title>
     <style>
-      :root { --bg:#f7fafc; --card:#fff; --text:#1f2937; --border:#e5e7eb; --link:#2563eb; }
+      :root { --bg:#f7fafc; --card:#fff; --text:#1f2937; --border:#e5e7eb; --link:#2563eb; --btn:#111827; --btn-alt:#1d4ed8; }
       * { box-sizing:border-box; }
       body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); }
       .wrap { max-width:980px; margin:24px auto; padding:0 16px; }
       h1 { margin:0 0 8px; }
       .muted { color:#6b7280; margin:0 0 18px; }
+      .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin:0 0 14px; }
+      .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+      .status { margin:8px 0 0; font-size:13px; color:#374151; }
       .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
       .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; }
       img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
       .name { margin:8px 0 4px; font-size:12px; overflow-wrap:anywhere; }
       a { color:var(--link); font-size:12px; text-decoration:none; overflow-wrap:anywhere; }
-      button { margin-top:8px; width:100%; padding:8px; border:0; border-radius:8px; background:#111827; color:#fff; cursor:pointer; }
+      .actions { display:flex; gap:8px; margin-top:8px; }
+      button, .button-link { margin-top:8px; width:100%; padding:8px; border:0; border-radius:8px; background:var(--btn); color:#fff; cursor:pointer; text-align:center; text-decoration:none; font-size:13px; }
+      .button-link { display:inline-block; background:var(--btn-alt); }
+      #open-github-upload { display:none; }
+      #upload-btn[disabled] { opacity:0.6; cursor:not-allowed; }
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Global Image Library</h1>
-      <p class="muted">Direct links below are email-ready image URLs.</p>
+      <p class="muted">Direct links below are email-ready image URLs. Upload uses Cloudinary when configured.</p>
+      <section class="panel">
+        <strong>Upload Image</strong>
+        <div class="row">
+          <input id="file-input" type="file" accept="image/*" />
+          <button id="upload-btn" type="button">Upload from Website</button>
+          <a id="open-github-upload" class="button-link" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
+        </div>
+        <p id="status" class="status">Ready.</p>
+      </section>
       <div id="grid" class="grid"></div>
     </div>
+    <script src="./config.js"></script>
     <script>
-      async function boot() {
-        const res = await fetch('./images.json');
-        const files = await res.json();
+      function getDefaultConfig() {
+        const host = location.hostname;
+        const pathParts = location.pathname.split('/').filter(Boolean);
+        const repo = pathParts.length > 0 ? pathParts[0] : '';
+        const user = host.endsWith('.github.io') ? host.replace('.github.io', '') : '';
+        return {
+          cloudinaryCloudName: '',
+          cloudinaryUnsignedPreset: '',
+          cloudinaryFolder: 'global-image-library',
+          githubUser: user,
+          githubRepo: repo,
+          githubBranch: 'main',
+          githubUploadFolder: 'docs/uploads'
+        };
+      }
+
+      function resolveConfig() {
+        const defaults = getDefaultConfig();
+        const provided = window.GIL_CONFIG || {};
+        return { ...defaults, ...provided };
+      }
+
+      function renderCard(url, name, prepend = false) {
         const grid = document.getElementById('grid');
-        for (const name of files) {
-          const url = `./uploads/${encodeURIComponent(name)}`;
-          const card = document.createElement('article');
-          card.className = 'card';
-          card.innerHTML = `
-            <img src="${url}" alt="${name}" />
-            <p class="name">${name}</p>
-            <a href="${url}" target="_blank" rel="noopener noreferrer">${new URL(url, location.href).href}</a>
-            <button type="button">Copy Direct URL</button>
-          `;
-          card.querySelector('button').addEventListener('click', async () => {
-            await navigator.clipboard.writeText(new URL(url, location.href).href);
-            card.querySelector('button').textContent = 'Copied';
-            setTimeout(() => card.querySelector('button').textContent = 'Copy Direct URL', 1200);
-          });
+        const card = document.createElement('article');
+        card.className = 'card';
+        const fullUrl = new URL(url, location.href).href;
+        card.innerHTML = `
+          <img src="${fullUrl}" alt="${name}" />
+          <p class="name">${name}</p>
+          <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
+          <button type="button">Copy Direct URL</button>
+        `;
+        card.querySelector('button').addEventListener('click', async () => {
+          await navigator.clipboard.writeText(fullUrl);
+          card.querySelector('button').textContent = 'Copied';
+          setTimeout(() => card.querySelector('button').textContent = 'Copy Direct URL', 1200);
+        });
+        if (prepend && grid.firstChild) {
+          grid.insertBefore(card, grid.firstChild);
+        } else {
           grid.appendChild(card);
+        }
+      }
+
+      function setStatus(text) {
+        document.getElementById('status').textContent = text;
+      }
+
+      async function uploadToCloudinary(file, config) {
+        const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudinaryCloudName)}/image/upload`;
+        const body = new FormData();
+        body.append('file', file);
+        body.append('upload_preset', config.cloudinaryUnsignedPreset);
+        if (config.cloudinaryFolder) {
+          body.append('folder', config.cloudinaryFolder);
+        }
+
+        const res = await fetch(endpoint, { method: 'POST', body });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Upload failed (${res.status}): ${txt.slice(0, 180)}`);
+        }
+        return res.json();
+      }
+
+      async function boot() {
+        const config = resolveConfig();
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const githubBtn = document.getElementById('open-github-upload');
+
+        const hasCloudinary = Boolean(config.cloudinaryCloudName && config.cloudinaryUnsignedPreset);
+        if (!hasCloudinary && config.githubUser && config.githubRepo) {
+          githubBtn.href = `https://github.com/${config.githubUser}/${config.githubRepo}/upload/${config.githubBranch}/${config.githubUploadFolder}`;
+          githubBtn.style.display = 'inline-block';
+          uploadBtn.disabled = true;
+          setStatus('Cloudinary not configured yet. Use Open GitHub Upload for now.');
+        } else if (hasCloudinary) {
+          setStatus('Cloudinary upload ready. Pick a file and click Upload from Website.');
+        } else {
+          uploadBtn.disabled = true;
+          setStatus('Upload not configured. Set config in docs/config.js.');
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            setStatus('Select an image file first.');
+            return;
+          }
+          try {
+            uploadBtn.disabled = true;
+            setStatus('Uploading...');
+            const result = await uploadToCloudinary(file, config);
+            const url = result.secure_url || result.url;
+            if (!url) {
+              throw new Error('No URL returned by Cloudinary.');
+            }
+            renderCard(url, file.name, true);
+            setStatus('Upload complete. Direct URL is shown in the first card.');
+            fileInput.value = '';
+          } catch (err) {
+            setStatus(`Upload error: ${err.message}`);
+          } finally {
+            if (hasCloudinary) uploadBtn.disabled = false;
+          }
+        });
+
+        try {
+          const res = await fetch('./images.json');
+          const files = await res.json();
+          for (const name of files) {
+            const url = `./uploads/${encodeURIComponent(name)}`;
+            renderCard(url, name);
+          }
+        } catch (_e) {
+          setStatus('Could not load images.json, but upload tools are still available.');
         }
       }
       boot();

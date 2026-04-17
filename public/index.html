@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Image Hosting</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Simple Image Hosting</h1>
+      <p>Upload an image and copy a public URL you can use in emails.</p>
+
+      <form id="uploadForm">
+        <input id="imageInput" type="file" name="image" accept="image/*" required />
+        <button type="submit">Upload</button>
+      </form>
+
+      <section id="result" class="card hidden">
+        <h2>Uploaded</h2>
+        <img id="preview" alt="Uploaded preview" />
+        <label for="imageUrl">Public URL</label>
+        <input id="imageUrl" type="text" readonly />
+        <button id="copyBtn" type="button">Copy URL</button>
+      </section>
+
+      <section class="card">
+        <h2>All Uploaded Images</h2>
+        <div id="gallery" class="gallery"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

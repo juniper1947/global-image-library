@@ -1,0 +1,14 @@
+{
+  "name": "basic-image-hosting-site",
+  "version": "1.0.0",
+  "description": "Simple image hosting site with upload and public URLs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hosted Images</title>
+    <style>
+      :root { --bg:#f7fafc; --card:#fff; --text:#1f2937; --border:#e5e7eb; --link:#2563eb; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); }
+      .wrap { max-width:980px; margin:24px auto; padding:0 16px; }
+      h1 { margin:0 0 8px; }
+      .muted { color:#6b7280; margin:0 0 18px; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+      .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; }
+      img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+      .name { margin:8px 0 4px; font-size:12px; overflow-wrap:anywhere; }
+      a { color:var(--link); font-size:12px; text-decoration:none; overflow-wrap:anywhere; }
+      button { margin-top:8px; width:100%; padding:8px; border:0; border-radius:8px; background:#111827; color:#fff; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Hosted Images</h1>
+      <p class="muted">Direct links below are email-ready image URLs.</p>
+      <div id="grid" class="grid"></div>
+    </div>
+    <script>
+      async function boot() {
+        const res = await fetch('./images.json');
+        const files = await res.json();
+        const grid = document.getElementById('grid');
+        for (const name of files) {
+          const url = `./uploads/${encodeURIComponent(name)}`;
+          const card = document.createElement('article');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${url}" alt="${name}" />
+            <p class="name">${name}</p>
+            <a href="${url}" target="_blank" rel="noopener noreferrer">${new URL(url, location.href).href}</a>
+            <button type="button">Copy Direct URL</button>
+          `;
+          card.querySelector('button').addEventListener('click', async () => {
+            await navigator.clipboard.writeText(new URL(url, location.href).href);
+            card.querySelector('button').textContent = 'Copied';
+            setTimeout(() => card.querySelector('button').textContent = 'Copy Direct URL', 1200);
+          });
+          grid.appendChild(card);
+        }
+      }
+      boot();
+    </script>
+  </body>
+</html>

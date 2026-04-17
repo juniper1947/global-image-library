@@ -7,6 +7,7 @@ A simple reusable image-hosting web app for all projects.
 - Get a permanent public URL (as long as file stays on server)
 - View uploaded images in a simple gallery
 - Copy project-safe URLs from one central library
+- Trace image placement from source emails using project manifests
 
 ## Setup
 
@@ -66,6 +67,33 @@ You can require a passcode before website upload is enabled.
 Security note:
 - Passcode lock on a static page is a deterrent, not full security
 - For true private upload/access control, use a backend with authenticated signed uploads
+
+## Team System (for all current and future projects)
+Use a project slug and keep images grouped by project:
+
+- `docs/uploads/<project-slug>/<filename>`
+
+Before upload, generate a traceable placement manifest:
+
+```bash
+npm run extract:images -- --html /absolute/path/to/source-email.html --project 2026-04-training-hub-launch
+```
+
+This creates:
+- `docs/projects/<project-slug>/manifest.json`
+- `docs/projects/<project-slug>/upload-checklist.md`
+
+Then upload the files and add relative paths to `docs/images.json`, for example:
+
+```json
+[
+  "2026-04-training-hub-launch/01-hero-training-hub.png",
+  "2026-04-training-hub-launch/02-step-sign-up.png"
+]
+```
+
+Full team instructions:
+- See `docs/TEAM-WORKFLOW.md`
 
 ### Direct image URL formats
 Preferred (stable across projects):  

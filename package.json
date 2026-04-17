@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "extract:images": "node scripts/extract-email-images.js"
   },
   "dependencies": {
     "express": "^4.19.2",

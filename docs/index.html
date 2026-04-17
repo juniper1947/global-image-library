@@ -149,10 +149,38 @@
         return { ...defaults, ...provided };
       }
 
-      function buildGithubCdnUrl(name, config) {
+      function encodePath(path) {
+        return String(path || '')
+          .split('/')
+          .filter(Boolean)
+          .map((segment) => encodeURIComponent(segment))
+          .join('/');
+      }
+
+      function buildGithubCdnUrl(pathValue, config) {
         if (!config.githubUser || !config.githubRepo) return null;
         const cleanFolder = (config.githubUploadFolder || 'docs/uploads').replace(/^\/+|\/+$/g, '');
-        return `https://cdn.jsdelivr.net/gh/${config.githubUser}/${config.githubRepo}@${config.githubBranch}/${cleanFolder}/${encodeURIComponent(name)}`;
+        const cleanPath = encodePath(pathValue);
+        return `https://cdn.jsdelivr.net/gh/${config.githubUser}/${config.githubRepo}@${config.githubBranch}/${cleanFolder}/${cleanPath}`;
+      }
+
+      function normalizeImageEntry(entry) {
+        if (typeof entry === 'string') {
+          return {
+            path: entry,
+            name: entry.split('/').filter(Boolean).pop() || entry,
+            uploadedAt: null
+          };
+        }
+        if (entry && typeof entry === 'object') {
+          const rawPath = entry.path || entry.file || entry.name || '';
+          return {
+            path: rawPath,
+            name: entry.label || entry.displayName || rawPath.split('/').filter(Boolean).pop() || rawPath,
+            uploadedAt: entry.uploadedAt || entry.createdAt || null
+          };
+        }
+        return null;
       }
 
       function setStatus(text, ok = false) {
@@ -305,13 +333,15 @@
 
         try {
           const res = await fetch('./images.json');
-          const files = await res.json();
-          for (const name of files) {
-            const relative = `./uploads/${encodeURIComponent(name)}`;
+          const rows = await res.json();
+          for (const row of rows) {
+            const item = normalizeImageEntry(row);
+            if (!item || !item.path) continue;
+            const relative = `./uploads/${encodePath(item.path)}`;
             const absolute = new URL(relative, location.href).href;
-            const cdnUrl = buildGithubCdnUrl(name, config);
-            const modified = await getLastModifiedForImage(absolute);
-            renderCard(cdnUrl || relative, name, modified);
+            const cdnUrl = buildGithubCdnUrl(item.path, config);
+            const modified = item.uploadedAt || await getLastModifiedForImage(absolute);
+            renderCard(cdnUrl || relative, item.name, modified);
           }
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');

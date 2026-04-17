@@ -1,0 +1,64 @@
+{
+  "project": "2026-04-training-hub-announcement",
+  "sourceHtml": "../announcement-email-template.html",
+  "extractedAt": "2026-04-17T19:40:13.726Z",
+  "imageCount": 7,
+  "images": [
+    {
+      "order": 1,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/01-hero-training-hub.png",
+      "alt": "Training Hub preview",
+      "context": "Private Staff Community Welcome to Your Staff Training Hub This is your central ",
+      "suggestedFileName": "01-private-staff-community-welcome-to-your-staff-training-hub-this-is-your-central.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/01-private-staff-community-welcome-to-your-staff-training-hub-this-is-your-central.png"
+    },
+    {
+      "order": 2,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/02-step-1-sign-up.png",
+      "alt": "Sign up step",
+      "context": "How to Register in 3 Simple Steps",
+      "suggestedFileName": "02-how-to-register-in-3-simple-steps.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/02-how-to-register-in-3-simple-steps.png"
+    },
+    {
+      "order": 3,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/03-step-2-create-account.png",
+      "alt": "Create account step",
+      "context": "How to Register in 3 Simple Steps Sign Up Click the invite link to open the regi",
+      "suggestedFileName": "03-how-to-register-in-3-simple-steps-sign-up-click-the-invite-link-to-open-the-regi.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/03-how-to-register-in-3-simple-steps-sign-up-click-the-invite-link-to-open-the-regi.png"
+    },
+    {
+      "order": 4,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/04-step-3-set-name.png",
+      "alt": "Set name step",
+      "context": "Create Account Choose \"Sign in with Google\" and complete your account setup.",
+      "suggestedFileName": "04-create-account-choose-sign-in-with-google-and-complete-your-account-setup.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/04-create-account-choose-sign-in-with-google-and-complete-your-account-setup.png"
+    },
+    {
+      "order": 5,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/05-feature-staff-courses.png",
+      "alt": "Staff courses",
+      "context": "What You’ll Get Inside the Hub",
+      "suggestedFileName": "05-what-you-ll-get-inside-the-hub.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/05-what-you-ll-get-inside-the-hub.png"
+    },
+    {
+      "order": 6,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/06-feature-team-calendar.png",
+      "alt": "Team calendar",
+      "context": "Staff Training Courses All required training modules, onboarding lessons, and st",
+      "suggestedFileName": "06-staff-training-courses-all-required-training-modules-onboarding-lessons-and-st.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/06-staff-training-courses-all-required-training-modules-onboarding-lessons-and-st.png"
+    },
+    {
+      "order": 7,
+      "originalSrc": "https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/07-feature-discussion-announcements.png",
+      "alt": "Discussion and announcements",
+      "context": "Team Training Calendar Track deadlines, team meetings, and upcoming training sch",
+      "suggestedFileName": "07-team-training-calendar-track-deadlines-team-meetings-and-upcoming-training-sch.png",
+      "targetPath": "docs/uploads/2026-04-training-hub-announcement/07-team-training-calendar-track-deadlines-team-meetings-and-upcoming-training-sch.png"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "project": "2026-04-pxp-email-template-assets",
+  "intakeType": "email",
+  "source": "/Users/kone/Documents/Email pxp Marketing/email-template.html",
+  "notes": "",
+  "createdAt": "2026-04-17T20:01:54.241Z",
+  "uploadFolder": "docs/uploads/2026-04-pxp-email-template-assets",
+  "status": "intake_started",
+  "requiredArtifacts": [
+    "project.json",
+    "upload-checklist.md",
+    "manifest.json (for email intake via extract:images)"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "project": "2026-04-pxp-email-template-assets",
+  "sourceHtml": "../../../Users/kone/Documents/Email pxp Marketing/email-template.html",
+  "extractedAt": "2026-04-17T20:01:57.157Z",
+  "imageCount": 2,
+  "images": [
+    {
+      "order": 1,
+      "originalSrc": "https://storage.googleapis.com/msgsndr/CS4NGSgWYVqwkUR4I0Zh/media/69615410cef10154ccb18495.png",
+      "alt": "PXP Logo",
+      "context": "",
+      "suggestedFileName": "01-pxp-logo.png",
+      "targetPath": "docs/uploads/2026-04-pxp-email-template-assets/01-pxp-logo.png"
+    },
+    {
+      "order": 2,
+      "originalSrc": "https://img.youtube.com/vi/RSaNF7BKJns/hqdefault.jpg",
+      "alt": "Watch YouTube live upload",
+      "context": "Watch Latest Upload",
+      "suggestedFileName": "02-watch-latest-upload.jpg",
+      "targetPath": "docs/uploads/2026-04-pxp-email-template-assets/02-watch-latest-upload.jpg"
+    }
+  ]
+}

@@ -198,7 +198,8 @@
           return {
             path: entry,
             name: entry.split('/').filter(Boolean).pop() || entry,
-            uploadedAt: null
+            uploadedAt: null,
+            sourceUrl: null
           };
         }
         if (entry && typeof entry === 'object') {
@@ -206,7 +207,8 @@
           return {
             path: rawPath,
             name: entry.label || entry.displayName || rawPath.split('/').filter(Boolean).pop() || rawPath,
-            uploadedAt: entry.uploadedAt || entry.createdAt || null
+            uploadedAt: entry.uploadedAt || entry.createdAt || null,
+            sourceUrl: entry.sourceUrl || entry.originalSrc || entry.source || null
           };
         }
         return null;
@@ -240,15 +242,23 @@
         }
       }
 
-      function renderCard(url, name, uploadedAt, prepend = false) {
+      function renderCard(url, name, uploadedAt, sourceUrl = null, prepend = false) {
         const grid = document.getElementById('grid');
         const card = document.createElement('article');
         card.className = 'card';
         const fullUrl = new URL(url, location.href).href;
+        const sourceText = sourceUrl ? String(sourceUrl) : '';
+        const sourceIsHttp = /^https?:\/\//i.test(sourceText);
+        const sourceLine = sourceUrl
+          ? sourceIsHttp
+            ? `<p class="date">Source: <a href="${sourceText}" target="_blank" rel="noopener noreferrer">${sourceText}</a></p>`
+            : `<p class="date">Source: ${sourceText}</p>`
+          : '';
         card.innerHTML = `
           <img src="${fullUrl}" alt="${name}" loading="lazy" />
           <p class="name">${name}</p>
           <p class="date">${formatDate(uploadedAt)}</p>
+          ${sourceLine}
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <button type="button">Copy Direct URL</button>
         `;
@@ -393,7 +403,7 @@
             const url = result.secure_url || result.url;
             if (!url) throw new Error('No URL returned by Cloudinary.');
 
-            renderCard(url, file.name, result.created_at || new Date().toISOString(), true);
+            renderCard(url, file.name, result.created_at || new Date().toISOString(), null, true);
             setStatus('Upload complete. First card has your direct URL.', true);
             fileInput.value = '';
             setSelectedFile(null);
@@ -414,7 +424,7 @@
             const absolute = new URL(relative, location.href).href;
             const cdnUrl = buildGithubCdnUrl(item.path, config);
             const modified = item.uploadedAt || await getLastModifiedForImage(absolute);
-            renderCard(cdnUrl || relative, item.name, modified);
+            renderCard(cdnUrl || relative, item.name, modified, item.sourceUrl);
           }
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');

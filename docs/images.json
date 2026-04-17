@@ -5,5 +5,23 @@
   "04-step-3-set-name.png",
   "05-feature-staff-courses.png",
   "06-feature-team-calendar.png",
-  "07-feature-discussion-announcements.png"
+  "07-feature-discussion-announcements.png",
+  {
+    "path": "2026-04-pxp-email-template-assets/01-header-logo-storage-googleapis-msgsndr-69615410cef10154ccb18495.png",
+    "displayName": "PXP Header Logo (Email)",
+    "uploadedAt": "2026-04-17T20:01:54.379Z",
+    "sourceUrl": "https://storage.googleapis.com/msgsndr/CS4NGSgWYVqwkUR4I0Zh/media/69615410cef10154ccb18495.png"
+  },
+  {
+    "path": "2026-04-pxp-email-template-assets/02-local-pxp-logo-email.jpg",
+    "displayName": "PXP Logo Email JPG (Local Source)",
+    "uploadedAt": "2026-04-17T20:01:54.379Z",
+    "sourceUrl": "local:/Users/kone/Documents/Email pxp Marketing/images/pxp-logo-email.jpg"
+  },
+  {
+    "path": "2026-04-pxp-email-template-assets/03-local-powered-x-prayer-logo-email-1080.png",
+    "displayName": "Powered X Prayer Logo 1080 PNG (Local Source)",
+    "uploadedAt": "2026-04-17T20:01:54.379Z",
+    "sourceUrl": "local:/Users/kone/Documents/Email pxp Marketing/images/powered-x-prayer-logo-email-1080.png"
+  }
 ]

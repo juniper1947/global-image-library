@@ -149,6 +149,12 @@
         return { ...defaults, ...provided };
       }
 
+      function buildGithubCdnUrl(name, config) {
+        if (!config.githubUser || !config.githubRepo) return null;
+        const cleanFolder = (config.githubUploadFolder || 'docs/uploads').replace(/^\/+|\/+$/g, '');
+        return `https://cdn.jsdelivr.net/gh/${config.githubUser}/${config.githubRepo}@${config.githubBranch}/${cleanFolder}/${encodeURIComponent(name)}`;
+      }
+
       function setStatus(text, ok = false) {
         const el = document.getElementById('status');
         el.innerHTML = ok ? `<strong>${text}</strong>` : text;
@@ -303,8 +309,9 @@
           for (const name of files) {
             const relative = `./uploads/${encodeURIComponent(name)}`;
             const absolute = new URL(relative, location.href).href;
+            const cdnUrl = buildGithubCdnUrl(name, config);
             const modified = await getLastModifiedForImage(absolute);
-            renderCard(relative, name, modified);
+            renderCard(cdnUrl || relative, name, modified);
           }
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');

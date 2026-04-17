@@ -6,7 +6,7 @@ A simple reusable image-hosting web app for all projects.
 - Upload image files (jpg, png, webp, gif, svg)
 - Get a permanent public URL (as long as file stays on server)
 - View uploaded images in a simple gallery
-- Automatic gallery refresh when files change in `docs/uploads`
+- Copy project-safe URLs from one central library
 
 ## Setup
 
@@ -67,10 +67,14 @@ Security note:
 - Passcode lock on a static page is a deterrent, not full security
 - For true private upload/access control, use a backend with authenticated signed uploads
 
-### Direct image URL format
-`https://juniper1947.github.io/global-image-library/uploads/<filename>`
+### Direct image URL formats
+Preferred (stable across projects):  
+`https://cdn.jsdelivr.net/gh/juniper1947/global-image-library@main/docs/uploads/<filename>`
+
+Also works from GitHub Pages site path:  
+`https://juniper1947.github.io/global-image-library/docs/uploads/<filename>`
 
 ### Rename or delete
 - Rename: open file -> edit (pencil) -> change filename -> commit
 - Delete: open file -> trash icon -> commit
-- The workflow auto-updates `docs/images.json` after each change
+- If you upload directly in GitHub, update `docs/images.json` when adding/removing files so gallery listing stays current

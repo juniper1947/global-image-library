@@ -1,0 +1,14 @@
+{
+  "project": "2026-04-eclc-summer-camp-assets",
+  "intakeType": "screenshot",
+  "source": "local:/Volumes/WD SSD/Dump Files/ChatGPT Image Apr 23, 2026, 08_46_01 PM.png",
+  "notes": "",
+  "createdAt": "2026-04-23T12:54:07.091Z",
+  "uploadFolder": "docs/uploads/2026-04-eclc-summer-camp-assets",
+  "status": "intake_started",
+  "requiredArtifacts": [
+    "project.json",
+    "upload-checklist.md",
+    "manifest.json (for email intake via extract:images)"
+  ]
+}

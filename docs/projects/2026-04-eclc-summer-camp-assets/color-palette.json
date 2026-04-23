@@ -1,0 +1,13 @@
+{
+  "project": "2026-04-eclc-summer-camp-assets",
+  "source": "ChatGPT Image Apr 23, 2026, 08_46_01 PM.png",
+  "palette": [
+    { "name": "Forest Green", "hex": "#3e6303", "usage": "Primary headings, strong CTA accents" },
+    { "name": "Olive Green", "hex": "#808f27", "usage": "Secondary buttons, badges, accents" },
+    { "name": "Sun Gold", "hex": "#eab93a", "usage": "Highlight strips, promo callouts" },
+    { "name": "Burgundy", "hex": "#990025", "usage": "Subheading emphasis and contrast accents" },
+    { "name": "Sand Beige", "hex": "#d6bd86", "usage": "Cards, neutral backgrounds" },
+    { "name": "Cream", "hex": "#f3eee2", "usage": "Page background" },
+    { "name": "Deep Olive", "hex": "#223407", "usage": "Body text on light backgrounds" }
+  ]
+}

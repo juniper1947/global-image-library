@@ -32,6 +32,21 @@
         min-height: 100vh;
       }
       .wrap { max-width: 1080px; margin: 28px auto; padding: 0 16px; }
+      .top-auth {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 20;
+        display: flex;
+        gap: 8px;
+      }
+      .top-auth button {
+        margin-top: 0;
+        width: auto;
+        min-width: 88px;
+        padding: 8px 12px;
+        border-radius: 999px;
+      }
       h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 0.2px; }
       .muted { color: var(--muted); margin: 0 0 18px; }
       .panel {
@@ -127,6 +142,10 @@
     </style>
   </head>
   <body>
+    <div class="top-auth">
+      <button id="top-login-btn" type="button">Login</button>
+      <button id="top-logout-btn" type="button" style="display:none;">Logout</button>
+    </div>
     <div class="wrap">
       <h1>Global Image Library</h1>
       <p class="muted">Dark mode gallery with direct URLs and upload-date labels.</p>
@@ -386,6 +405,37 @@
         };
       }
 
+      const LOGIN_SESSION_KEY = 'gil_upload_auth_session_v1';
+      const LOGIN_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+      function saveUploadSession() {
+        localStorage.setItem(LOGIN_SESSION_KEY, JSON.stringify({
+          expiresAt: Date.now() + LOGIN_SESSION_TTL_MS
+        }));
+      }
+
+      function clearUploadSession() {
+        localStorage.removeItem(LOGIN_SESSION_KEY);
+      }
+
+      function isUploadSessionValid() {
+        try {
+          const raw = localStorage.getItem(LOGIN_SESSION_KEY);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          const expiresAt = Number(parsed && parsed.expiresAt);
+          if (!Number.isFinite(expiresAt)) return false;
+          if (Date.now() >= expiresAt) {
+            clearUploadSession();
+            return false;
+          }
+          return true;
+        } catch {
+          clearUploadSession();
+          return false;
+        }
+      }
+
       async function boot() {
         const config = resolveConfig();
         const fileInput = document.getElementById('file-input');
@@ -396,6 +446,8 @@
         const lockRow = document.getElementById('lock-row');
         const unlockBtn = document.getElementById('unlock-btn');
         const lockBtn = document.getElementById('lock-btn');
+        const topLoginBtn = document.getElementById('top-login-btn');
+        const topLogoutBtn = document.getElementById('top-logout-btn');
         const passcodeInput = document.getElementById('passcode-input');
         let selectedFile = null;
         const renderedUrls = new Set();
@@ -449,11 +501,22 @@
         const targetFolder = sanitizeSingleFolderName(config.cloudinaryFolder) || '(root)';
         uploadTarget.textContent = `Upload target folder: ${targetFolder}`;
 
-        let unlocked = !hasPasscode;
+        let unlocked = !hasPasscode || isUploadSessionValid();
         if (hasPasscode) {
-          lockRow.style.display = 'flex';
-          uploadBtn.disabled = true;
-          lockBtn.style.display = 'none';
+          lockRow.style.display = 'none';
+        }
+
+        function syncAuthUi() {
+          if (!hasPasscode) {
+            topLoginBtn.style.display = 'none';
+            topLogoutBtn.style.display = 'none';
+            uploadBtn.disabled = !hasCloudinary;
+            return;
+          }
+          topLoginBtn.style.display = unlocked ? 'none' : 'inline-block';
+          topLogoutBtn.style.display = unlocked ? 'inline-block' : 'none';
+          lockBtn.style.display = unlocked ? 'inline-block' : 'none';
+          uploadBtn.disabled = !(hasCloudinary && unlocked);
         }
 
         if (!hasCloudinary && config.githubUser && config.githubRepo) {
@@ -464,11 +527,12 @@
         } else if (hasCloudinary && !hasPasscode) {
           setStatus('Upload ready. This sends image to Cloudinary and returns a hosted URL you can use in any project.', true);
         } else if (hasCloudinary && hasPasscode) {
-          setStatus('Upload locked. Enter passcode to unlock.');
+          setStatus(unlocked ? 'Upload unlocked (session active).' : 'Upload locked. Use Login (top-right) to unlock.', unlocked);
         } else {
           uploadBtn.disabled = true;
           setStatus('Upload not configured. Set config in docs/config.js.');
         }
+        syncAuthUi();
 
         unlockBtn.addEventListener('click', async () => {
           const entered = passcodeInput.value.trim();
@@ -481,10 +545,10 @@
             const hash = await sha256Hex(entered);
             if (hash === config.uploadPasscodeHash.toLowerCase()) {
               unlocked = true;
-              uploadBtn.disabled = !hasCloudinary;
+              saveUploadSession();
               passcodeInput.value = '';
-              lockBtn.style.display = 'inline-block';
               setStatus('Upload unlocked for this session.', true);
+              syncAuthUi();
             } else {
               setStatus('Wrong passcode.');
             }
@@ -495,10 +559,31 @@
 
         lockBtn.addEventListener('click', () => {
           unlocked = false;
-          uploadBtn.disabled = true;
+          clearUploadSession();
           passcodeInput.value = '';
-          lockBtn.style.display = 'none';
           setStatus('Upload locked.');
+          syncAuthUi();
+        });
+
+        topLoginBtn.addEventListener('click', async () => {
+          const entered = window.prompt('Enter admin upload passcode');
+          if (!entered) return;
+          const hash = await sha256Hex(entered.trim());
+          if (hash === config.uploadPasscodeHash.toLowerCase()) {
+            unlocked = true;
+            saveUploadSession();
+            setStatus('Login success. Upload unlocked for 24 hours.', true);
+            syncAuthUi();
+          } else {
+            setStatus('Wrong passcode.');
+          }
+        });
+
+        topLogoutBtn.addEventListener('click', () => {
+          unlocked = false;
+          clearUploadSession();
+          setStatus('Logged out. Upload locked.');
+          syncAuthUi();
         });
 
         uploadBtn.addEventListener('click', async () => {

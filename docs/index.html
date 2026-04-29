@@ -359,6 +359,12 @@
 
       function applyGalleryPrivacyLock(locked) {
         document.body.classList.toggle('gallery-locked', Boolean(locked));
+        const grid = document.getElementById('grid');
+        if (grid) {
+          grid.setAttribute('data-locked', locked ? '1' : '0');
+          // Force style recalculation so cards reliably unhide after re-login.
+          void grid.offsetHeight;
+        }
       }
 
       function parseUploadTime(value) {
@@ -656,6 +662,7 @@
             topLoginBtn.style.display = 'none';
             topLogoutBtn.style.display = 'none';
             uploadBtn.disabled = !hasCloudinary;
+            applyGalleryPrivacyLock(false);
             return;
           }
           topLoginBtn.style.display = unlocked ? 'none' : 'inline-block';
@@ -663,6 +670,10 @@
           lockBtn.style.display = unlocked ? 'inline-block' : 'none';
           uploadBtn.disabled = !(hasCloudinary && unlocked);
           applyGalleryPrivacyLock(!unlocked);
+          // Make sure existing cards are re-painted on auth toggle.
+          document.querySelectorAll('#grid .card').forEach((card) => {
+            card.style.display = '';
+          });
         }
 
         if (!hasCloudinary && config.githubUser && config.githubRepo) {

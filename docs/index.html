@@ -47,6 +47,7 @@
         padding: 8px 12px;
         border-radius: 999px;
       }
+      #top-trash-btn { display: none; }
       h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 0.2px; }
       .muted { color: var(--muted); margin: 0 0 18px; }
       .credit {
@@ -170,6 +171,41 @@
         margin-top: 0;
         flex: 1;
       }
+      .trash-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: #00000099;
+        z-index: 40;
+        padding: 16px;
+      }
+      .trash-modal.open { display: flex; }
+      .trash-panel {
+        width: min(700px, 100%);
+        max-height: 75vh;
+        overflow: auto;
+        background: linear-gradient(180deg, #0f1a30, #0a1222);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .trash-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .trash-head h3 {
+        margin: 0;
+        font-size: 15px;
+      }
+      .trash-head button {
+        margin-top: 0;
+        width: auto;
+        padding: 6px 10px;
+      }
       .trash-list { display: grid; gap: 8px; margin-top: 10px; }
       .trash-item {
         border: 1px solid var(--border);
@@ -209,11 +245,12 @@
     <div class="top-auth">
       <button id="top-login-btn" type="button">Login</button>
       <button id="top-logout-btn" type="button" style="display:none;">Logout</button>
+      <button id="top-trash-btn" type="button">Trash</button>
     </div>
     <div class="wrap">
       <h1>Global Image Library</h1>
       <p class="muted">Dark mode gallery with direct URLs and upload-date labels.</p>
-      <p class="credit">Created by Jun Uy <a href="mailto:junniferross.uy@gmail.com" title="Email Jun Uy" aria-label="Email Jun Uy">✉</a></p>
+      <p class="credit">Created by Jun Uy <a href="https://mail.google.com/mail/?view=cm&fs=1&to=junniferross.uy@gmail.com" target="_blank" rel="noopener noreferrer" title="Email Jun Uy" aria-label="Email Jun Uy">✉</a></p>
 
       <section class="panel">
         <strong>Upload Image</strong>
@@ -237,13 +274,17 @@
         <p class="tiny">Security note: this static site can gate uploads, but full private access needs a backend auth layer.</p>
       </section>
 
-      <section class="panel">
-        <strong>Trash History (Auto-delete after 30 days)</strong>
+      <div id="grid" class="grid"></div>
+    </div>
+    <div id="trash-modal" class="trash-modal" aria-hidden="true">
+      <div class="trash-panel">
+        <div class="trash-head">
+          <h3>Trash History (Auto-delete after 30 days)</h3>
+          <button id="trash-close-btn" type="button">Close</button>
+        </div>
         <p id="trash-info" class="tiny">Trash is empty.</p>
         <div id="trash-list" class="trash-list"></div>
-      </section>
-
-      <div id="grid" class="grid"></div>
+      </div>
     </div>
 
     <script src="./config.js"></script>
@@ -581,6 +622,9 @@
         const lockBtn = document.getElementById('lock-btn');
         const topLoginBtn = document.getElementById('top-login-btn');
         const topLogoutBtn = document.getElementById('top-logout-btn');
+        const topTrashBtn = document.getElementById('top-trash-btn');
+        const trashModal = document.getElementById('trash-modal');
+        const trashCloseBtn = document.getElementById('trash-close-btn');
         const passcodeInput = document.getElementById('passcode-input');
         let selectedFile = null;
         const renderedUrls = new Set();
@@ -695,12 +739,14 @@
           if (!hasPasscode) {
             topLoginBtn.style.display = 'none';
             topLogoutBtn.style.display = 'none';
+            topTrashBtn.style.display = 'inline-block';
             uploadBtn.disabled = !hasCloudinary;
             applyGalleryPrivacyLock(false);
             return;
           }
           topLoginBtn.style.display = unlocked ? 'none' : 'inline-block';
           topLogoutBtn.style.display = unlocked ? 'inline-block' : 'none';
+          topTrashBtn.style.display = unlocked ? 'inline-block' : 'none';
           lockBtn.style.display = unlocked ? 'inline-block' : 'none';
           uploadBtn.disabled = !(hasCloudinary && unlocked);
           applyGalleryPrivacyLock(!unlocked);
@@ -775,6 +821,22 @@
           clearUploadSession();
           setStatus('Logged out. Upload locked.');
           syncAuthUi();
+        });
+
+        topTrashBtn.addEventListener('click', () => {
+          renderTrashHistory();
+          trashModal.classList.add('open');
+          trashModal.setAttribute('aria-hidden', 'false');
+        });
+        trashCloseBtn.addEventListener('click', () => {
+          trashModal.classList.remove('open');
+          trashModal.setAttribute('aria-hidden', 'true');
+        });
+        trashModal.addEventListener('click', (event) => {
+          if (event.target === trashModal) {
+            trashModal.classList.remove('open');
+            trashModal.setAttribute('aria-hidden', 'true');
+          }
         });
 
         document.getElementById('grid').addEventListener('click', (event) => {

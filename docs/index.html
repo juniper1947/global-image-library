@@ -140,6 +140,15 @@
       #open-github-upload { display: none; }
       #upload-btn[disabled], #unlock-btn[disabled], #lock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
       .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; }
+      .card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .card-actions button {
+        margin-top: 0;
+        flex: 1;
+      }
       .trash-list { display: grid; gap: 8px; margin-top: 10px; }
       .trash-item {
         border: 1px solid var(--border);
@@ -163,7 +172,7 @@
         user-select: none;
       }
       .gallery-locked .card a,
-      .gallery-locked .card button {
+      .gallery-locked .card .card-actions {
         display: none !important;
       }
       .gallery-locked .card .name,
@@ -342,14 +351,17 @@
           <p class="date">${formatDate(uploadedAt)}</p>
           ${sourceLine}
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
-          <button type="button">Copy Direct URL</button>
-          <button type="button" class="delete-btn">Delete Image</button>
+          <div class="card-actions">
+            <button type="button" class="copy-btn">Copy Direct URL</button>
+            <button type="button" class="delete-btn">Delete Image</button>
+          </div>
           <p class="card-lock-note">Locked: login required to view/copy links.</p>
         `;
-        card.querySelector('button').addEventListener('click', async () => {
+        card.querySelector('.copy-btn').addEventListener('click', async () => {
           await navigator.clipboard.writeText(fullUrl);
-          card.querySelector('button').textContent = 'Copied';
-          setTimeout(() => card.querySelector('button').textContent = 'Copy Direct URL', 1200);
+          const btn = card.querySelector('.copy-btn');
+          btn.textContent = 'Copied';
+          setTimeout(() => btn.textContent = 'Copy Direct URL', 1200);
         });
 
         if (prepend && grid.firstChild) grid.insertBefore(card, grid.firstChild);
@@ -750,6 +762,8 @@
           if (!card) return;
           const fullUrl = card.dataset.url || '';
           if (!fullUrl) return;
+          const shouldDelete = window.confirm('Delete this image from gallery view?');
+          if (!shouldDelete) return;
           deletedUrls.add(fullUrl);
           saveDeletedUrls(deletedUrls);
           renderedUrls.delete(fullUrl);

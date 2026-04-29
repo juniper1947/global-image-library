@@ -208,7 +208,8 @@
             path: entry,
             name: entry.split('/').filter(Boolean).pop() || entry,
             uploadedAt: null,
-            sourceUrl: null
+            sourceUrl: null,
+            directUrl: null
           };
         }
         if (entry && typeof entry === 'object') {
@@ -217,7 +218,8 @@
             path: rawPath,
             name: entry.label || entry.displayName || rawPath.split('/').filter(Boolean).pop() || rawPath,
             uploadedAt: entry.uploadedAt || entry.createdAt || null,
-            sourceUrl: entry.sourceUrl || entry.originalSrc || entry.source || null
+            sourceUrl: entry.sourceUrl || entry.originalSrc || entry.source || null,
+            directUrl: entry.directUrl || entry.url || null
           };
         }
         return null;
@@ -239,6 +241,15 @@
         const data = new TextEncoder().encode(value);
         const hash = await crypto.subtle.digest('SHA-256', data);
         return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          return false;
+        }
       }
 
       async function getLastModifiedForImage(url) {
@@ -353,6 +364,24 @@
             };
           })
           .filter(Boolean);
+      }
+
+      function makeTrackedCloudinaryEntry(url, uploadedAt) {
+        let fileName = 'cloudinary-image';
+        try {
+          const u = new URL(url);
+          const last = u.pathname.split('/').filter(Boolean).pop() || fileName;
+          fileName = decodeURIComponent(last);
+        } catch {
+          // keep fallback name
+        }
+        return {
+          path: `cloudinary/images/${fileName}`,
+          displayName: fileName,
+          uploadedAt: uploadedAt || new Date().toISOString(),
+          sourceUrl: `cloudinary:${fileName}`,
+          directUrl: url
+        };
       }
 
       async function boot() {
@@ -490,7 +519,14 @@
               uploadedAt,
               sourceUrl: null
             });
-            setStatus('Upload complete. Saved locally for this browser and shown on refresh.', true);
+            const trackEntry = makeTrackedCloudinaryEntry(url, uploadedAt);
+            const copied = await copyToClipboard(`${JSON.stringify(trackEntry, null, 2)},`);
+            if (copied) {
+              setStatus('Upload complete. Tracking entry copied. Paste it into docs/images.json so it is visible on hosted website for everyone.', true);
+            } else {
+              setStatus('Upload complete. Add this URL to docs/images.json so it is visible on hosted website for everyone.', true);
+              console.log('Add this entry to docs/images.json:', trackEntry);
+            }
             fileInput.value = '';
             setSelectedFile(null);
           } catch (err) {
@@ -505,12 +541,15 @@
           const rows = await res.json();
           for (const row of rows) {
             const item = normalizeImageEntry(row);
-            if (!item || !item.path) continue;
-            const relative = `./uploads/${encodePath(item.path)}`;
-            const absolute = new URL(relative, location.href).href;
-            const cdnUrl = buildGithubCdnUrl(item.path, config);
-            const modified = item.uploadedAt || await getLastModifiedForImage(absolute);
-            renderCardIfNew(cdnUrl || relative, item.name, modified, item.sourceUrl);
+            if (!item) continue;
+            const hasPath = Boolean(item.path);
+            const relative = hasPath ? `./uploads/${encodePath(item.path)}` : null;
+            const absolute = relative ? new URL(relative, location.href).href : null;
+            const cdnUrl = hasPath ? buildGithubCdnUrl(item.path, config) : null;
+            const resolvedUrl = item.directUrl || cdnUrl || relative;
+            if (!resolvedUrl) continue;
+            const modified = item.uploadedAt || (absolute ? await getLastModifiedForImage(absolute) : null);
+            renderCardIfNew(resolvedUrl, item.name, modified, item.sourceUrl);
           }
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');
@@ -530,7 +569,10 @@
           if (cloudinaryRows.length) {
             setStatus(`Loaded ${cloudinaryRows.length} Cloudinary image(s) from your library tag.`, true);
           }
-        } catch {
+        } catch (err) {
+          if (String(err && err.message || '').includes('401')) {
+            setStatus('Cloudinary history API is restricted on this account. Uploads still work; paste copied tracking entries into docs/images.json to make them visible for everyone.', false);
+          }
           // Keep gallery usable even if Cloudinary list is disabled.
         }
       }

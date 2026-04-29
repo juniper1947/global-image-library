@@ -42,5 +42,12 @@
   "2026-04-eclc-summer-camp-assets/10-icon-piggy-bank-from-board.png",
   "2026-04-eclc-summer-camp-assets/11-color-palette-swatches-from-board.png",
   "2026-04-eclc-summer-camp-assets/12-source-eclc-summer-camp-little-leaders-village.png",
-  "2026-04-eclc-summer-camp-assets/13-source-eclc-learning-center-logo.png"
+  "2026-04-eclc-summer-camp-assets/13-source-eclc-learning-center-logo.png",
+  {
+    "path": "cloudinary/images/global-image-library/ECLC_Graduation_Yearbook_2026_2_dnaffb.png",
+    "displayName": "ECLC Graduation Yearbook 2026 2",
+    "uploadedAt": "2026-04-29T07:37:10Z",
+    "sourceUrl": "cloudinary:dozcy2jve/global-image-library/ECLC_Graduation_Yearbook_2026_2_dnaffb.png",
+    "directUrl": "https://res.cloudinary.com/dozcy2jve/image/upload/v1777448230/global-image-library/ECLC_Graduation_Yearbook_2026_2_dnaffb.png"
+  }
 ]

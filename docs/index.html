@@ -102,6 +102,7 @@
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 10px;
+        position: relative;
       }
       img {
         width: 100%;
@@ -139,6 +140,25 @@
       #open-github-upload { display: none; }
       #upload-btn[disabled], #unlock-btn[disabled], #lock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
       .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; }
+      .card-lock-note {
+        display: none;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #c6d4f4;
+      }
+      .gallery-locked .card img {
+        filter: blur(16px);
+        transform: scale(1.02);
+        pointer-events: none;
+        user-select: none;
+      }
+      .gallery-locked .card a,
+      .gallery-locked .card button {
+        display: none !important;
+      }
+      .gallery-locked .card .card-lock-note {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -302,6 +322,7 @@
           ${sourceLine}
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <button type="button">Copy Direct URL</button>
+          <p class="card-lock-note">Locked: login required to view/copy links.</p>
         `;
         card.querySelector('button').addEventListener('click', async () => {
           await navigator.clipboard.writeText(fullUrl);
@@ -312,6 +333,10 @@
         if (prepend && grid.firstChild) grid.insertBefore(card, grid.firstChild);
         else grid.appendChild(card);
         return fullUrl;
+      }
+
+      function applyGalleryPrivacyLock(locked) {
+        document.body.classList.toggle('gallery-locked', Boolean(locked));
       }
 
       function getLocalUploadStorageKey(config) {
@@ -458,6 +483,7 @@
           if (renderedUrls.has(fullUrl)) return;
           renderedUrls.add(fullUrl);
           renderCard(url, name, uploadedAt, sourceUrl, prepend);
+          applyGalleryPrivacyLock(hasPasscode && !unlocked);
         }
 
         function setSelectedFile(file) {
@@ -517,6 +543,7 @@
           topLogoutBtn.style.display = unlocked ? 'inline-block' : 'none';
           lockBtn.style.display = unlocked ? 'inline-block' : 'none';
           uploadBtn.disabled = !(hasCloudinary && unlocked);
+          applyGalleryPrivacyLock(!unlocked);
         }
 
         if (!hasCloudinary && config.githubUser && config.githubRepo) {

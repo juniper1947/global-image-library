@@ -134,7 +134,7 @@
         padding: 10px;
         position: relative;
       }
-      img {
+      img, video {
         width: 100%;
         aspect-ratio: 1/1;
         object-fit: cover;
@@ -316,21 +316,21 @@
       <p class="bg-credit">Background image by Gregory H. Revera, <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>, <a href="https://commons.wikimedia.org/w/index.php?curid=11901243" target="_blank" rel="noopener noreferrer">source</a>.</p>
 
       <section class="panel">
-        <strong>Upload Image</strong>
+        <strong>Upload Media</strong>
         <div id="lock-row" class="row" style="margin-top:10px; display:none;">
           <input id="passcode-input" type="password" autocomplete="off" placeholder="Enter upload passcode" />
           <button id="unlock-btn" type="button">Unlock Upload</button>
           <button id="lock-btn" type="button" style="display:none;">Lock Upload</button>
         </div>
-        <input id="file-input" type="file" accept="image/*" />
-        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image files here or click to choose">
+        <input id="file-input" type="file" accept="image/*,video/*" />
+        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image or video files here or click to choose">
           <div>
-            <p class="drop-title">Drag image here or click to choose file</p>
-            <p class="drop-sub">Use this to upload image to Cloudinary and get a hosted URL.</p>
+            <p class="drop-title">Drag image or video here or click to choose file</p>
+            <p class="drop-sub">Use this to upload media to Cloudinary and get a hosted URL.</p>
           </div>
         </div>
         <p id="file-name" class="file-name">No file selected.</p>
-        <button id="upload-btn" class="upload-action" type="button">Upload Selected Image</button>
+        <button id="upload-btn" class="upload-action" type="button">Upload Selected Media</button>
         <a id="open-github-upload" class="button-link upload-action" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
         <p id="status" class="status">Ready.</p>
       </section>
@@ -403,7 +403,8 @@
             name: entry.split('/').filter(Boolean).pop() || entry,
             uploadedAt: null,
             sourceUrl: null,
-            directUrl: null
+            directUrl: null,
+            mediaType: null
           };
         }
         if (entry && typeof entry === 'object') {
@@ -413,7 +414,8 @@
             name: entry.label || entry.displayName || rawPath.split('/').filter(Boolean).pop() || rawPath,
             uploadedAt: entry.uploadedAt || entry.createdAt || null,
             sourceUrl: entry.sourceUrl || entry.originalSrc || entry.source || null,
-            directUrl: entry.directUrl || entry.url || null
+            directUrl: entry.directUrl || entry.url || null,
+            mediaType: entry.mediaType || null
           };
         }
         return null;
@@ -456,11 +458,24 @@
         }
       }
 
-      function renderCard(url, name, uploadedAt, sourceUrl = null, prepend = false) {
+      function detectMediaType(url, explicitType = null) {
+        const normalized = String(explicitType || '').toLowerCase();
+        if (normalized === 'video') return 'video';
+        if (normalized === 'image') return 'image';
+        const clean = String(url || '').split('?')[0].toLowerCase();
+        if (/\.(mp4|webm|ogg|mov|m4v|avi|mkv)$/.test(clean)) return 'video';
+        return 'image';
+      }
+
+      function renderCard(url, name, uploadedAt, sourceUrl = null, prepend = false, mediaType = null) {
         const grid = document.getElementById('grid');
         const card = document.createElement('article');
         card.className = 'card';
         const fullUrl = new URL(url, location.href).href;
+        const resolvedMediaType = detectMediaType(fullUrl, mediaType);
+        const mediaMarkup = resolvedMediaType === 'video'
+          ? `<video src="${fullUrl}" controls preload="metadata" playsinline></video>`
+          : `<img src="${fullUrl}" alt="${name}" loading="lazy" />`;
         card.dataset.url = fullUrl;
         const sourceText = sourceUrl ? String(sourceUrl) : '';
         const sourceIsHttp = /^https?:\/\//i.test(sourceText);
@@ -470,7 +485,7 @@
             : `<p class="date">Source: ${sourceText}</p>`
           : '';
         card.innerHTML = `
-          <img src="${fullUrl}" alt="${name}" loading="lazy" />
+          ${mediaMarkup}
           <p class="name">${name}</p>
           <p class="date">${formatDate(uploadedAt)}</p>
           ${sourceLine}
@@ -538,7 +553,7 @@
       }
 
       async function uploadToCloudinary(file, config) {
-        const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudinaryCloudName)}/image/upload`;
+        const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudinaryCloudName)}/auto/upload`;
         const body = new FormData();
         body.append('file', file);
         body.append('upload_preset', config.cloudinaryUnsignedPreset);
@@ -553,35 +568,40 @@
         return res.json();
       }
 
-      function buildCloudinaryDeliveryUrl(publicId, config) {
+      function buildCloudinaryDeliveryUrl(publicId, config, resourceType = 'image') {
         if (!publicId || !config.cloudinaryCloudName) return null;
-        return `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/image/upload/${publicId.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
+        return `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/${resourceType}/upload/${publicId.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
       }
 
       async function fetchCloudinaryHistory(config) {
         if (!config.cloudinaryCloudName || !config.cloudinaryListTag) return [];
-        const listUrl = `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/image/list/${encodeURIComponent(config.cloudinaryListTag)}.json?t=${Date.now()}`;
-        const res = await fetch(listUrl, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Cloudinary history unavailable (${res.status})`);
-        const payload = await res.json();
-        const resources = Array.isArray(payload.resources) ? payload.resources : [];
-        return resources
-          .map((item) => {
+        const types = ['image', 'video'];
+        const collected = [];
+        for (const resourceType of types) {
+          const listUrl = `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/${resourceType}/list/${encodeURIComponent(config.cloudinaryListTag)}.json?t=${Date.now()}`;
+          const res = await fetch(listUrl, { cache: 'no-store' });
+          if (!res.ok) continue;
+          const payload = await res.json();
+          const resources = Array.isArray(payload.resources) ? payload.resources : [];
+          for (const item of resources) {
             const publicId = item.public_id || '';
-            const url = item.secure_url || item.url || buildCloudinaryDeliveryUrl(publicId, config);
-            if (!url) return null;
-            const fileName = publicId.split('/').pop() || 'Cloudinary image';
-            return {
+            const url = item.secure_url || item.url || buildCloudinaryDeliveryUrl(publicId, config, resourceType);
+            if (!url) continue;
+            const fileName = publicId.split('/').pop() || `Cloudinary ${resourceType}`;
+            collected.push({
               url,
               name: fileName,
               uploadedAt: item.created_at || null,
-              sourceUrl: null
-            };
-          })
-          .filter(Boolean);
+              sourceUrl: null,
+              mediaType: resourceType
+            });
+          }
+        }
+        if (!collected.length) throw new Error('Cloudinary history unavailable');
+        return collected;
       }
 
-      function makeTrackedCloudinaryEntry(url, uploadedAt) {
+      function makeTrackedCloudinaryEntry(url, uploadedAt, mediaType = 'image') {
         let fileName = 'cloudinary-image';
         try {
           const u = new URL(url);
@@ -591,11 +611,12 @@
           // keep fallback name
         }
         return {
-          path: `cloudinary/images/${fileName}`,
+          path: `cloudinary/${mediaType === 'video' ? 'videos' : 'images'}/${fileName}`,
           displayName: fileName,
           uploadedAt: uploadedAt || new Date().toISOString(),
           sourceUrl: `cloudinary:${fileName}`,
-          directUrl: url
+          directUrl: url,
+          mediaType
         };
       }
 
@@ -695,12 +716,12 @@
         let trashHistory = purgeExpiredTrashRows(loadTrashHistory());
         saveTrashHistory(trashHistory);
 
-        function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false) {
+        function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false, mediaType = null) {
           const fullUrl = new URL(url, location.href).href;
           if (deletedUrls.has(fullUrl)) return;
           if (renderedUrls.has(fullUrl)) return;
           renderedUrls.add(fullUrl);
-          renderCard(url, name, uploadedAt, sourceUrl, prepend);
+          renderCard(url, name, uploadedAt, sourceUrl, prepend, mediaType);
           applyGalleryPrivacyLock(hasPasscode && !unlocked);
         }
 
@@ -709,7 +730,7 @@
             .slice()
             .sort((a, b) => parseUploadTime(b.uploadedAt) - parseUploadTime(a.uploadedAt))
             .forEach((row) => {
-              renderCardIfNew(row.url, row.name, row.uploadedAt, row.sourceUrl || null, prepend);
+              renderCardIfNew(row.url, row.name, row.uploadedAt, row.sourceUrl || null, prepend, row.mediaType || null);
             });
         }
 
@@ -740,9 +761,9 @@
               saveDeletedUrls(deletedUrls);
               trashHistory = trashHistory.filter((x) => x.url !== row.url);
               saveTrashHistory(trashHistory);
-              renderCardIfNew(row.url, row.name || 'Restored image', row.uploadedAt || null, row.sourceUrl || null, true);
+              renderCardIfNew(row.url, row.name || 'Restored media', row.uploadedAt || null, row.sourceUrl || null, true);
               renderTrashHistory();
-              setStatus('Image restored from trash.', true);
+              setStatus('Media restored from trash.', true);
             });
             trashList.appendChild(item);
           }
@@ -821,7 +842,7 @@
           uploadBtn.disabled = true;
           setStatus('Website upload is off because Cloudinary is not configured. Use Open GitHub Upload.');
         } else if (hasCloudinary && !hasPasscode) {
-          setStatus('Upload ready. This sends image to Cloudinary and returns a hosted URL you can use in any project.', true);
+          setStatus('Upload ready. This sends image or video to Cloudinary and returns a hosted URL you can use in any project.', true);
         } else if (hasCloudinary && hasPasscode) {
           setStatus(unlocked ? 'Upload unlocked (session active).' : 'Upload locked. Use Login (top-right) to unlock.', unlocked);
         } else {
@@ -905,13 +926,13 @@
           if (!card) return;
           const fullUrl = card.dataset.url || '';
           if (!fullUrl) return;
-          const shouldDelete = window.confirm('Delete this image from gallery view?');
+          const shouldDelete = window.confirm('Delete this media from gallery view?');
           if (!shouldDelete) return;
           deletedUrls.add(fullUrl);
           saveDeletedUrls(deletedUrls);
           renderedUrls.delete(fullUrl);
           card.remove();
-          const nameText = (card.querySelector('.name') && card.querySelector('.name').textContent) || 'Deleted image';
+          const nameText = (card.querySelector('.name') && card.querySelector('.name').textContent) || 'Deleted media';
           const dateText = (card.querySelector('.date') && card.querySelector('.date').textContent) || '';
           const uploadedAtRaw = dateText.startsWith('Uploaded: ') ? dateText.replace('Uploaded: ', '').trim() : null;
           trashHistory = purgeExpiredTrashRows([
@@ -932,7 +953,7 @@
             return rowUrl !== fullUrl;
           });
           saveLocalUploads(config, localRows);
-          setStatus('Image removed from this gallery view.');
+          setStatus('Media removed from this gallery view.');
         });
 
         uploadBtn.addEventListener('click', async () => {
@@ -943,11 +964,14 @@
 
           const file = selectedFile || (fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
           if (!file) {
-            setStatus('Select or drag an image file first.');
+            setStatus('Select or drag an image or video file first.');
             return;
           }
-          if (!(file.type || '').startsWith('image/')) {
-            setStatus('Only image files are allowed.');
+          const mimeType = String(file.type || '');
+          const isImage = mimeType.startsWith('image/');
+          const isVideo = mimeType.startsWith('video/');
+          if (!isImage && !isVideo) {
+            setStatus('Only image or video files are allowed.');
             return;
           }
 
@@ -959,14 +983,16 @@
             if (!url) throw new Error('No URL returned by Cloudinary.');
 
             const uploadedAt = result.created_at || new Date().toISOString();
-            renderCardIfNew(url, file.name, uploadedAt, null, true);
+            const mediaType = result.resource_type === 'video' || isVideo ? 'video' : 'image';
+            renderCardIfNew(url, file.name, uploadedAt, null, true, mediaType);
             addLocalUpload(config, {
               url,
               name: file.name,
               uploadedAt,
-              sourceUrl: null
+              sourceUrl: null,
+              mediaType
             });
-            const trackEntry = makeTrackedCloudinaryEntry(url, uploadedAt);
+            const trackEntry = makeTrackedCloudinaryEntry(url, uploadedAt, mediaType);
             const copied = await copyToClipboard(`${JSON.stringify(trackEntry, null, 2)},`);
             if (copied) {
               setStatus('Upload complete. Tracking entry copied. Paste it into docs/images.json so it is visible on hosted website for everyone.', true);
@@ -1001,7 +1027,8 @@
               url: resolvedUrl,
               name: item.name,
               uploadedAt: modified,
-              sourceUrl: item.sourceUrl
+              sourceUrl: item.sourceUrl,
+              mediaType: item.mediaType || null
             });
           }
           renderRowsNewestFirst(normalizedRows);
@@ -1014,9 +1041,10 @@
           .filter((item) => item && item.url)
           .map((item) => ({
             url: item.url,
-            name: item.name || 'Uploaded image',
+            name: item.name || 'Uploaded media',
             uploadedAt: item.uploadedAt || null,
-            sourceUrl: item.sourceUrl || null
+            sourceUrl: item.sourceUrl || null,
+            mediaType: item.mediaType || null
           }));
         renderRowsNewestFirst(normalizedLocalRows, true);
 
@@ -1024,7 +1052,7 @@
           const cloudinaryRows = await fetchCloudinaryHistory(config);
           renderRowsNewestFirst(cloudinaryRows, true);
           if (cloudinaryRows.length) {
-            setStatus(`Loaded ${cloudinaryRows.length} Cloudinary image(s) from your library tag.`, true);
+            setStatus(`Loaded ${cloudinaryRows.length} Cloudinary media item(s) from your library tag.`, true);
           }
         } catch (err) {
           if (String(err && err.message || '').includes('401')) {

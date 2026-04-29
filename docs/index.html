@@ -312,6 +312,7 @@
         const card = document.createElement('article');
         card.className = 'card';
         const fullUrl = new URL(url, location.href).href;
+        card.dataset.url = fullUrl;
         const sourceText = sourceUrl ? String(sourceUrl) : '';
         const sourceIsHttp = /^https?:\/\//i.test(sourceText);
         const sourceLine = sourceUrl
@@ -326,6 +327,7 @@
           ${sourceLine}
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <button type="button">Copy Direct URL</button>
+          <button type="button" class="delete-btn">Delete Image</button>
           <p class="card-lock-note">Locked: login required to view/copy links.</p>
         `;
         card.querySelector('button').addEventListener('click', async () => {
@@ -441,6 +443,7 @@
 
       const LOGIN_SESSION_KEY = 'gil_upload_auth_session_v1';
       const LOGIN_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+      const DELETED_URLS_KEY = 'gil_deleted_urls_v1';
 
       function saveUploadSession() {
         localStorage.setItem(LOGIN_SESSION_KEY, JSON.stringify({
@@ -470,6 +473,21 @@
         }
       }
 
+      function loadDeletedUrls() {
+        try {
+          const raw = localStorage.getItem(DELETED_URLS_KEY);
+          if (!raw) return new Set();
+          const parsed = JSON.parse(raw);
+          return new Set(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          return new Set();
+        }
+      }
+
+      function saveDeletedUrls(urlSet) {
+        localStorage.setItem(DELETED_URLS_KEY, JSON.stringify(Array.from(urlSet)));
+      }
+
       async function boot() {
         const config = resolveConfig();
         const fileInput = document.getElementById('file-input');
@@ -485,10 +503,12 @@
         const passcodeInput = document.getElementById('passcode-input');
         let selectedFile = null;
         const renderedUrls = new Set();
+        const deletedUrls = loadDeletedUrls();
         const uploadTarget = document.getElementById('upload-target');
 
         function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false) {
           const fullUrl = new URL(url, location.href).href;
+          if (deletedUrls.has(fullUrl)) return;
           if (renderedUrls.has(fullUrl)) return;
           renderedUrls.add(fullUrl);
           renderCard(url, name, uploadedAt, sourceUrl, prepend);
@@ -629,6 +649,26 @@
           clearUploadSession();
           setStatus('Logged out. Upload locked.');
           syncAuthUi();
+        });
+
+        document.getElementById('grid').addEventListener('click', (event) => {
+          const target = event.target;
+          if (!target || !target.classList || !target.classList.contains('delete-btn')) return;
+          const card = target.closest('.card');
+          if (!card) return;
+          const fullUrl = card.dataset.url || '';
+          if (!fullUrl) return;
+          deletedUrls.add(fullUrl);
+          saveDeletedUrls(deletedUrls);
+          renderedUrls.delete(fullUrl);
+          card.remove();
+
+          const localRows = loadLocalUploads(config).filter((row) => {
+            const rowUrl = row && row.url ? new URL(row.url, location.href).href : '';
+            return rowUrl !== fullUrl;
+          });
+          saveLocalUploads(config, localRows);
+          setStatus('Image removed from this gallery view.');
         });
 
         uploadBtn.addEventListener('click', async () => {

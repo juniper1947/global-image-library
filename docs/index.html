@@ -224,6 +224,61 @@
       .trash-item .name { margin: 0 0 6px; font-size: 12px; }
       .trash-item .date { margin: 0 0 8px; font-size: 11px; }
       .trash-item button { margin-top: 0; width: 100%; }
+      @media (max-width: 768px) {
+        .wrap {
+          margin: 72px auto 18px;
+          padding: 0 12px;
+        }
+        h1 {
+          font-size: 34px;
+          line-height: 1.1;
+        }
+        .top-auth {
+          top: 10px;
+          right: 10px;
+          left: 10px;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+        }
+        .top-auth button {
+          min-width: 76px;
+          padding: 7px 10px;
+          font-size: 12px;
+        }
+        .panel {
+          padding: 12px;
+          border-radius: 12px;
+        }
+        .drop-zone {
+          min-height: 124px;
+          padding: 12px;
+        }
+        .drop-title {
+          font-size: 14px;
+        }
+        .drop-sub {
+          font-size: 12px;
+        }
+        .upload-action {
+          padding: 11px;
+          font-size: 13px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .card-actions {
+          gap: 6px;
+        }
+        .card-actions button {
+          font-size: 12px;
+          padding: 9px;
+        }
+        .trash-panel {
+          max-height: 82vh;
+          padding: 10px;
+        }
+      }
       .card-lock-note {
         display: none;
         margin-top: 8px;

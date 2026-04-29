@@ -49,7 +49,7 @@
         padding: 8px 12px;
         border-radius: 999px;
       }
-      #top-trash-btn { display: none; }
+      #top-trash-btn { display: inline-block; }
       h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 0.2px; }
       .muted { color: var(--muted); margin: 0 0 18px; }
       .credit {
@@ -805,7 +805,7 @@
           }
           topLoginBtn.style.display = unlocked ? 'none' : 'inline-block';
           topLogoutBtn.style.display = unlocked ? 'inline-block' : 'none';
-          topTrashBtn.style.display = unlocked ? 'inline-block' : 'none';
+          topTrashBtn.style.display = 'inline-block';
           lockBtn.style.display = unlocked ? 'inline-block' : 'none';
           uploadBtn.disabled = !(hasCloudinary && unlocked);
           applyGalleryPrivacyLock(!unlocked);

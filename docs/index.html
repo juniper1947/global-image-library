@@ -119,9 +119,9 @@
         font-weight: 600;
       }
       button:hover, .button-link:hover { background: var(--btn-hover); }
-      #unlock-btn, #open-github-upload { background: var(--btn-alt); }
+      #unlock-btn, #lock-btn, #open-github-upload { background: var(--btn-alt); }
       #open-github-upload { display: none; }
-      #upload-btn[disabled], #unlock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+      #upload-btn[disabled], #unlock-btn[disabled], #lock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
       .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; }
     </style>
   </head>
@@ -135,6 +135,7 @@
         <div id="lock-row" class="row" style="margin-top:10px; display:none;">
           <input id="passcode-input" type="password" autocomplete="off" placeholder="Enter upload passcode" />
           <button id="unlock-btn" type="button">Unlock Upload</button>
+          <button id="lock-btn" type="button" style="display:none;">Lock Upload</button>
         </div>
         <input id="file-input" type="file" accept="image/*" />
         <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image files here or click to choose">
@@ -393,6 +394,7 @@
         const githubBtn = document.getElementById('open-github-upload');
         const lockRow = document.getElementById('lock-row');
         const unlockBtn = document.getElementById('unlock-btn');
+        const lockBtn = document.getElementById('lock-btn');
         const passcodeInput = document.getElementById('passcode-input');
         let selectedFile = null;
         const renderedUrls = new Set();
@@ -450,6 +452,7 @@
         if (hasPasscode) {
           lockRow.style.display = 'flex';
           uploadBtn.disabled = true;
+          lockBtn.style.display = 'none';
         }
 
         if (!hasCloudinary && config.githubUser && config.githubRepo) {
@@ -479,6 +482,7 @@
               unlocked = true;
               uploadBtn.disabled = !hasCloudinary;
               passcodeInput.value = '';
+              lockBtn.style.display = 'inline-block';
               setStatus('Upload unlocked for this session.', true);
             } else {
               setStatus('Wrong passcode.');
@@ -486,6 +490,14 @@
           } finally {
             unlockBtn.disabled = false;
           }
+        });
+
+        lockBtn.addEventListener('click', () => {
+          unlocked = false;
+          uploadBtn.disabled = true;
+          passcodeInput.value = '';
+          lockBtn.style.display = 'none';
+          setStatus('Upload locked.');
         });
 
         uploadBtn.addEventListener('click', async () => {

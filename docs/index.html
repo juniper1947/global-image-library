@@ -187,6 +187,13 @@
           .join('/');
       }
 
+      function sanitizeSingleFolderName(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        const firstPart = raw.split('/').filter(Boolean)[0] || '';
+        return firstPart.replace(/[^a-zA-Z0-9_-]/g, '');
+      }
+
       function buildGithubCdnUrl(pathValue, config) {
         if (!config.githubUser || !config.githubRepo) return null;
         const cleanFolder = (config.githubUploadFolder || 'docs/uploads').replace(/^\/+|\/+$/g, '');
@@ -308,7 +315,8 @@
         const body = new FormData();
         body.append('file', file);
         body.append('upload_preset', config.cloudinaryUnsignedPreset);
-        if (config.cloudinaryFolder) body.append('folder', config.cloudinaryFolder);
+        const singleFolder = sanitizeSingleFolderName(config.cloudinaryFolder);
+        if (singleFolder) body.append('folder', singleFolder);
 
         const res = await fetch(endpoint, { method: 'POST', body });
         if (!res.ok) {

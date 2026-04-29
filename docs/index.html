@@ -140,6 +140,16 @@
       #open-github-upload { display: none; }
       #upload-btn[disabled], #unlock-btn[disabled], #lock-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
       .tiny { font-size: 11px; color: var(--muted); margin-top: 6px; }
+      .trash-list { display: grid; gap: 8px; margin-top: 10px; }
+      .trash-item {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px;
+        background: #0b1527;
+      }
+      .trash-item .name { margin: 0 0 6px; font-size: 12px; }
+      .trash-item .date { margin: 0 0 8px; font-size: 11px; }
+      .trash-item button { margin-top: 0; width: 100%; }
       .card-lock-note {
         display: none;
         margin-top: 8px;
@@ -194,6 +204,12 @@
         <p id="status" class="status">Ready.</p>
         <p id="upload-target" class="tiny"></p>
         <p class="tiny">Security note: this static site can gate uploads, but full private access needs a backend auth layer.</p>
+      </section>
+
+      <section class="panel">
+        <strong>Trash History (Auto-delete after 30 days)</strong>
+        <p id="trash-info" class="tiny">Trash is empty.</p>
+        <div id="trash-list" class="trash-list"></div>
       </section>
 
       <div id="grid" class="grid"></div>
@@ -444,6 +460,8 @@
       const LOGIN_SESSION_KEY = 'gil_upload_auth_session_v1';
       const LOGIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
       const DELETED_URLS_KEY = 'gil_deleted_urls_v1';
+      const TRASH_HISTORY_KEY = 'gil_trash_history_v1';
+      const TRASH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
       function saveUploadSession() {
         localStorage.setItem(LOGIN_SESSION_KEY, JSON.stringify({
@@ -488,6 +506,29 @@
         localStorage.setItem(DELETED_URLS_KEY, JSON.stringify(Array.from(urlSet)));
       }
 
+      function loadTrashHistory() {
+        try {
+          const raw = localStorage.getItem(TRASH_HISTORY_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveTrashHistory(rows) {
+        localStorage.setItem(TRASH_HISTORY_KEY, JSON.stringify(rows));
+      }
+
+      function purgeExpiredTrashRows(rows) {
+        const now = Date.now();
+        return rows.filter((row) => {
+          const deletedAt = Number(row && row.deletedAtMs);
+          return Number.isFinite(deletedAt) && (now - deletedAt) < TRASH_TTL_MS;
+        });
+      }
+
       async function boot() {
         const config = resolveConfig();
         const fileInput = document.getElementById('file-input');
@@ -504,6 +545,10 @@
         let selectedFile = null;
         const renderedUrls = new Set();
         const deletedUrls = loadDeletedUrls();
+        const trashList = document.getElementById('trash-list');
+        const trashInfo = document.getElementById('trash-info');
+        let trashHistory = purgeExpiredTrashRows(loadTrashHistory());
+        saveTrashHistory(trashHistory);
         const uploadTarget = document.getElementById('upload-target');
 
         function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false) {
@@ -522,6 +567,42 @@
             .forEach((row) => {
               renderCardIfNew(row.url, row.name, row.uploadedAt, row.sourceUrl || null, prepend);
             });
+        }
+
+        function updateTrashInfo() {
+          if (!trashHistory.length) {
+            trashInfo.textContent = 'Trash is empty.';
+            return;
+          }
+          trashInfo.textContent = `${trashHistory.length} item(s) in trash. Auto-delete after 30 days.`;
+        }
+
+        function renderTrashHistory() {
+          trashList.innerHTML = '';
+          const sorted = trashHistory
+            .slice()
+            .sort((a, b) => Number(b.deletedAtMs || 0) - Number(a.deletedAtMs || 0));
+          for (const row of sorted) {
+            const item = document.createElement('div');
+            item.className = 'trash-item';
+            const deletedAtText = row.deletedAtMs ? new Date(row.deletedAtMs).toLocaleString() : 'unknown';
+            item.innerHTML = `
+              <p class="name">${row.name || 'Deleted image'}</p>
+              <p class="date">Deleted: ${deletedAtText}</p>
+              <button type="button" data-url="${row.url}">Restore</button>
+            `;
+            item.querySelector('button').addEventListener('click', () => {
+              deletedUrls.delete(row.url);
+              saveDeletedUrls(deletedUrls);
+              trashHistory = trashHistory.filter((x) => x.url !== row.url);
+              saveTrashHistory(trashHistory);
+              renderCardIfNew(row.url, row.name || 'Restored image', row.uploadedAt || null, row.sourceUrl || null, true);
+              renderTrashHistory();
+              setStatus('Image restored from trash.', true);
+            });
+            trashList.appendChild(item);
+          }
+          updateTrashInfo();
         }
 
         function setSelectedFile(file) {
@@ -662,6 +743,21 @@
           saveDeletedUrls(deletedUrls);
           renderedUrls.delete(fullUrl);
           card.remove();
+          const nameText = (card.querySelector('.name') && card.querySelector('.name').textContent) || 'Deleted image';
+          const dateText = (card.querySelector('.date') && card.querySelector('.date').textContent) || '';
+          const uploadedAtRaw = dateText.startsWith('Uploaded: ') ? dateText.replace('Uploaded: ', '').trim() : null;
+          trashHistory = purgeExpiredTrashRows([
+            {
+              url: fullUrl,
+              name: nameText,
+              uploadedAt: uploadedAtRaw,
+              sourceUrl: null,
+              deletedAtMs: Date.now()
+            },
+            ...trashHistory.filter((row) => row.url !== fullUrl)
+          ]);
+          saveTrashHistory(trashHistory);
+          renderTrashHistory();
 
           const localRows = loadLocalUploads(config).filter((row) => {
             const rowUrl = row && row.url ? new URL(row.url, location.href).href : '';
@@ -768,6 +864,8 @@
           }
           // Keep gallery usable even if Cloudinary list is disabled.
         }
+
+        renderTrashHistory();
       }
 
       boot();

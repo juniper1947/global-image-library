@@ -164,6 +164,7 @@
           cloudinaryCloudName: '',
           cloudinaryUnsignedPreset: '',
           cloudinaryFolder: 'global-image-library',
+          cloudinaryListTag: 'global-image-library',
           githubUser: user,
           githubRepo: repo,
           githubBranch: 'main',
@@ -270,6 +271,36 @@
 
         if (prepend && grid.firstChild) grid.insertBefore(card, grid.firstChild);
         else grid.appendChild(card);
+        return fullUrl;
+      }
+
+      function getLocalUploadStorageKey(config) {
+        return `gil_local_uploads_${config.githubUser || 'user'}_${config.githubRepo || 'repo'}`;
+      }
+
+      function loadLocalUploads(config) {
+        try {
+          const raw = localStorage.getItem(getLocalUploadStorageKey(config));
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveLocalUploads(config, rows) {
+        try {
+          localStorage.setItem(getLocalUploadStorageKey(config), JSON.stringify(rows));
+        } catch {
+          // Ignore storage quota/privacy failures and keep app usable.
+        }
+      }
+
+      function addLocalUpload(config, row) {
+        const current = loadLocalUploads(config);
+        const next = [row, ...current].slice(0, 300);
+        saveLocalUploads(config, next);
       }
 
       async function uploadToCloudinary(file, config) {
@@ -287,6 +318,34 @@
         return res.json();
       }
 
+      function buildCloudinaryDeliveryUrl(publicId, config) {
+        if (!publicId || !config.cloudinaryCloudName) return null;
+        return `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/image/upload/${publicId.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
+      }
+
+      async function fetchCloudinaryHistory(config) {
+        if (!config.cloudinaryCloudName || !config.cloudinaryListTag) return [];
+        const listUrl = `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/image/list/${encodeURIComponent(config.cloudinaryListTag)}.json?t=${Date.now()}`;
+        const res = await fetch(listUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Cloudinary history unavailable (${res.status})`);
+        const payload = await res.json();
+        const resources = Array.isArray(payload.resources) ? payload.resources : [];
+        return resources
+          .map((item) => {
+            const publicId = item.public_id || '';
+            const url = item.secure_url || item.url || buildCloudinaryDeliveryUrl(publicId, config);
+            if (!url) return null;
+            const fileName = publicId.split('/').pop() || 'Cloudinary image';
+            return {
+              url,
+              name: fileName,
+              uploadedAt: item.created_at || null,
+              sourceUrl: null
+            };
+          })
+          .filter(Boolean);
+      }
+
       async function boot() {
         const config = resolveConfig();
         const fileInput = document.getElementById('file-input');
@@ -298,6 +357,14 @@
         const unlockBtn = document.getElementById('unlock-btn');
         const passcodeInput = document.getElementById('passcode-input');
         let selectedFile = null;
+        const renderedUrls = new Set();
+
+        function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false) {
+          const fullUrl = new URL(url, location.href).href;
+          if (renderedUrls.has(fullUrl)) return;
+          renderedUrls.add(fullUrl);
+          renderCard(url, name, uploadedAt, sourceUrl, prepend);
+        }
 
         function setSelectedFile(file) {
           selectedFile = file || null;
@@ -403,8 +470,15 @@
             const url = result.secure_url || result.url;
             if (!url) throw new Error('No URL returned by Cloudinary.');
 
-            renderCard(url, file.name, result.created_at || new Date().toISOString(), null, true);
-            setStatus('Upload complete. First card has your direct URL.', true);
+            const uploadedAt = result.created_at || new Date().toISOString();
+            renderCardIfNew(url, file.name, uploadedAt, null, true);
+            addLocalUpload(config, {
+              url,
+              name: file.name,
+              uploadedAt,
+              sourceUrl: null
+            });
+            setStatus('Upload complete. Saved locally for this browser and shown on refresh.', true);
             fileInput.value = '';
             setSelectedFile(null);
           } catch (err) {
@@ -424,10 +498,28 @@
             const absolute = new URL(relative, location.href).href;
             const cdnUrl = buildGithubCdnUrl(item.path, config);
             const modified = item.uploadedAt || await getLastModifiedForImage(absolute);
-            renderCard(cdnUrl || relative, item.name, modified, item.sourceUrl);
+            renderCardIfNew(cdnUrl || relative, item.name, modified, item.sourceUrl);
           }
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');
+        }
+
+        const localUploads = loadLocalUploads(config);
+        for (const item of localUploads) {
+          if (!item || !item.url) continue;
+          renderCardIfNew(item.url, item.name || 'Uploaded image', item.uploadedAt || null, item.sourceUrl || null, true);
+        }
+
+        try {
+          const cloudinaryRows = await fetchCloudinaryHistory(config);
+          for (const item of cloudinaryRows) {
+            renderCardIfNew(item.url, item.name, item.uploadedAt, item.sourceUrl, true);
+          }
+          if (cloudinaryRows.length) {
+            setStatus(`Loaded ${cloudinaryRows.length} Cloudinary image(s) from your library tag.`, true);
+          }
+        } catch {
+          // Keep gallery usable even if Cloudinary list is disabled.
         }
       }
 

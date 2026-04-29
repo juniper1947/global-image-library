@@ -6,6 +6,7 @@ window.GIL_CONFIG = {
 
   // Optional
   cloudinaryFolder: "global-image-library",
+  cloudinaryListTag: "global-image-library",
   githubBranch: "main",
   githubUploadFolder: "docs/uploads",
 

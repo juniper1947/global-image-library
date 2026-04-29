@@ -279,8 +279,6 @@
         <button id="upload-btn" class="upload-action" type="button">Upload Selected Image</button>
         <a id="open-github-upload" class="button-link upload-action" href="#" target="_blank" rel="noopener noreferrer">Open GitHub Upload</a>
         <p id="status" class="status">Ready.</p>
-        <p id="upload-target" class="tiny"></p>
-        <p class="tiny">Security note: this static site can gate uploads, but full private access needs a backend auth layer.</p>
       </section>
 
       <div id="grid" class="grid"></div>
@@ -642,7 +640,6 @@
         const trashInfo = document.getElementById('trash-info');
         let trashHistory = purgeExpiredTrashRows(loadTrashHistory());
         saveTrashHistory(trashHistory);
-        const uploadTarget = document.getElementById('upload-target');
 
         function renderCardIfNew(url, name, uploadedAt, sourceUrl = null, prepend = false) {
           const fullUrl = new URL(url, location.href).href;
@@ -737,7 +734,6 @@
         const hasCloudinary = Boolean(config.cloudinaryCloudName && config.cloudinaryUnsignedPreset);
         const hasPasscode = Boolean(config.uploadPasscodeHash);
         const targetFolder = sanitizeSingleFolderName(config.cloudinaryFolder) || '(root)';
-        uploadTarget.textContent = `Upload target folder: ${targetFolder}`;
 
         let unlocked = !hasPasscode || isUploadSessionValid();
         if (hasPasscode) {

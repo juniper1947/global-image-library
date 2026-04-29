@@ -5,7 +5,7 @@ window.GIL_CONFIG = {
   cloudinaryUnsignedPreset: "global_image_library_unsigned",
 
   // Optional
-  cloudinaryFolder: "global-image-library",
+  cloudinaryFolder: "global-image-library/images",
   cloudinaryListTag: "global-image-library",
   githubBranch: "main",
   githubUploadFolder: "docs/uploads",

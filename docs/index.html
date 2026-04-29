@@ -339,6 +339,11 @@
         document.body.classList.toggle('gallery-locked', Boolean(locked));
       }
 
+      function parseUploadTime(value) {
+        const ts = new Date(value || '').getTime();
+        return Number.isFinite(ts) ? ts : 0;
+      }
+
       function getLocalUploadStorageKey(config) {
         return `gil_local_uploads_${config.githubUser || 'user'}_${config.githubRepo || 'repo'}`;
       }
@@ -484,6 +489,15 @@
           renderedUrls.add(fullUrl);
           renderCard(url, name, uploadedAt, sourceUrl, prepend);
           applyGalleryPrivacyLock(hasPasscode && !unlocked);
+        }
+
+        function renderRowsNewestFirst(rows, prepend = false) {
+          rows
+            .slice()
+            .sort((a, b) => parseUploadTime(b.uploadedAt) - parseUploadTime(a.uploadedAt))
+            .forEach((row) => {
+              renderCardIfNew(row.url, row.name, row.uploadedAt, row.sourceUrl || null, prepend);
+            });
         }
 
         function setSelectedFile(file) {
@@ -664,6 +678,7 @@
         try {
           const res = await fetch('./images.json');
           const rows = await res.json();
+          const normalizedRows = [];
           for (const row of rows) {
             const item = normalizeImageEntry(row);
             if (!item) continue;
@@ -674,23 +689,32 @@
             const resolvedUrl = item.directUrl || cdnUrl || relative;
             if (!resolvedUrl) continue;
             const modified = item.uploadedAt || (absolute ? await getLastModifiedForImage(absolute) : null);
-            renderCardIfNew(resolvedUrl, item.name, modified, item.sourceUrl);
+            normalizedRows.push({
+              url: resolvedUrl,
+              name: item.name,
+              uploadedAt: modified,
+              sourceUrl: item.sourceUrl
+            });
           }
+          renderRowsNewestFirst(normalizedRows);
         } catch {
           setStatus('Could not load images.json, but upload tools are available.');
         }
 
         const localUploads = loadLocalUploads(config);
-        for (const item of localUploads) {
-          if (!item || !item.url) continue;
-          renderCardIfNew(item.url, item.name || 'Uploaded image', item.uploadedAt || null, item.sourceUrl || null, true);
-        }
+        const normalizedLocalRows = localUploads
+          .filter((item) => item && item.url)
+          .map((item) => ({
+            url: item.url,
+            name: item.name || 'Uploaded image',
+            uploadedAt: item.uploadedAt || null,
+            sourceUrl: item.sourceUrl || null
+          }));
+        renderRowsNewestFirst(normalizedLocalRows, true);
 
         try {
           const cloudinaryRows = await fetchCloudinaryHistory(config);
-          for (const item of cloudinaryRows) {
-            renderCardIfNew(item.url, item.name, item.uploadedAt, item.sourceUrl, true);
-          }
+          renderRowsNewestFirst(cloudinaryRows, true);
           if (cloudinaryRows.length) {
             setStatus(`Loaded ${cloudinaryRows.length} Cloudinary image(s) from your library tag.`, true);
           }

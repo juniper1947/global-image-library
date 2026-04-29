@@ -25,6 +25,9 @@
         margin: 0;
         font-family: "Segoe UI", "Inter", Arial, sans-serif;
         background:
+          linear-gradient(180deg, #050914cc, #04070fee),
+          linear-gradient(180deg, #070b1699, #070b16cc),
+          url("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/1280px-FullMoon2010.jpg") center/cover fixed no-repeat,
           radial-gradient(900px 500px at 20% -10%, #153a7e33, transparent 65%),
           radial-gradient(1200px 500px at 90% -20%, #2a6edc22, transparent 60%),
           linear-gradient(180deg, var(--bg), #04070f);
@@ -71,6 +74,12 @@
         text-decoration: none;
       }
       .credit a:hover { border-color: #4f6ea1; background: #132039; }
+      .bg-credit {
+        color: #8fa4c9;
+        font-size: 11px;
+        margin: -10px 0 16px;
+      }
+      .bg-credit a { color: #a9c9ff; font-size: 11px; }
       .panel {
         background: linear-gradient(180deg, #0f1a30, #0a1222);
         border: 1px solid var(--border);
@@ -251,6 +260,7 @@
       <h1>Global Image Library</h1>
       <p class="muted">Dark mode gallery with direct URLs and upload-date labels.</p>
       <p class="credit">Created by Jun Uy <a href="https://mail.google.com/mail/?view=cm&fs=1&to=junniferross.uy@gmail.com" target="_blank" rel="noopener noreferrer" title="Email Jun Uy" aria-label="Email Jun Uy">✉</a></p>
+      <p class="bg-credit">Background image by Gregory H. Revera, <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>, <a href="https://commons.wikimedia.org/w/index.php?curid=11901243" target="_blank" rel="noopener noreferrer">source</a>.</p>
 
       <section class="panel">
         <strong>Upload Image</strong>
@@ -415,7 +425,7 @@
           ${sourceLine}
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <div class="card-actions">
-            <button type="button" class="copy-btn">Copy Direct URL</button>
+            <button type="button" class="copy-btn">Copy URL</button>
             <button type="button" class="delete-btn">Delete Image</button>
           </div>
           <p class="card-lock-note">Locked: login required to view/copy links.</p>
@@ -424,7 +434,7 @@
           await navigator.clipboard.writeText(fullUrl);
           const btn = card.querySelector('.copy-btn');
           btn.textContent = 'Copied';
-          setTimeout(() => btn.textContent = 'Copy Direct URL', 1200);
+          setTimeout(() => btn.textContent = 'Copy URL', 1200);
         });
 
         if (prepend && grid.firstChild) grid.insertBefore(card, grid.firstChild);

@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "extract:images": "node scripts/extract-email-images.js",
-    "init:project": "node scripts/init-library-project.js"
+    "init:project": "node scripts/init-library-project.js",
+    "set:upload-passcode": "node scripts/set-upload-passcode.js"
   },
   "dependencies": {
     "express": "^4.19.2",

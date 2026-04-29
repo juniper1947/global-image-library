@@ -13,5 +13,5 @@ window.GIL_CONFIG = {
   // Optional upload gate:
   // Put a SHA-256 hex hash of your passcode (lowercase). Leave blank to disable lock.
   // Important: this is only a client-side gate, not full server-side security.
-  uploadPasscodeHash: ""
+  uploadPasscodeHash: "83bbfb7a8708448cbaba07fbd8ce06bfa0d5c6b02e2f873439e5bffeda786d92"
 };

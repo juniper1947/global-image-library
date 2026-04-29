@@ -60,9 +60,17 @@ If Cloudinary values are empty, the page automatically shows a GitHub upload fal
 ### Optional upload passcode
 You can require a passcode before website upload is enabled.
 
-1. Generate SHA-256 hash of your passcode
-2. Put the lowercase hash in `docs/config.js` as `uploadPasscodeHash`
-3. Commit and deploy
+1. Set/rotate passcode hash with:
+   ```bash
+   npm run set:upload-passcode -- "your-strong-passcode"
+   ```
+2. Commit and push:
+   ```bash
+   git add docs/config.js
+   git commit -m "Rotate upload passcode hash"
+   git push origin main
+   ```
+3. Refresh live page and verify upload is locked until passcode is entered
 
 Security note:
 - Passcode lock on a static page is a deterrent, not full security

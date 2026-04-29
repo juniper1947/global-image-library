@@ -142,6 +142,10 @@
         border: 1px solid var(--border);
         background: #0b1324;
       }
+      audio {
+        width: 100%;
+        margin-top: 2px;
+      }
       .name { margin: 8px 0 4px; font-size: 12px; overflow-wrap: anywhere; }
       .date { margin: 0 0 6px; color: var(--muted); font-size: 12px; }
       a {
@@ -285,7 +289,9 @@
         font-size: 12px;
         color: #c6d4f4;
       }
-      .gallery-locked .card img {
+      .gallery-locked .card img,
+      .gallery-locked .card video,
+      .gallery-locked .card audio {
         filter: blur(16px);
         transform: scale(1.02);
         pointer-events: none;
@@ -322,11 +328,11 @@
           <button id="unlock-btn" type="button">Unlock Upload</button>
           <button id="lock-btn" type="button" style="display:none;">Lock Upload</button>
         </div>
-        <input id="file-input" type="file" accept="image/*,video/*" />
-        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image or video files here or click to choose">
+        <input id="file-input" type="file" accept="image/*,video/*,audio/*" />
+        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop image, video, or audio files here or click to choose">
           <div>
-            <p class="drop-title">Drag image or video here or click to choose file</p>
-            <p class="drop-sub">Use this to upload media to Cloudinary and get a hosted URL.</p>
+            <p class="drop-title">Drag image, video, audio, or MP3 here or click to choose file</p>
+            <p class="drop-sub">Use this to upload media (including .mp3 sound effects) to Cloudinary and get a hosted URL.</p>
           </div>
         </div>
         <p id="file-name" class="file-name">No file selected.</p>
@@ -461,9 +467,11 @@
       function detectMediaType(url, explicitType = null) {
         const normalized = String(explicitType || '').toLowerCase();
         if (normalized === 'video') return 'video';
+        if (normalized === 'audio') return 'audio';
         if (normalized === 'image') return 'image';
         const clean = String(url || '').split('?')[0].toLowerCase();
         if (/\.(mp4|webm|ogg|mov|m4v|avi|mkv)$/.test(clean)) return 'video';
+        if (/\.(mp3|wav|aac|m4a|flac|oga|opus|wma)$/.test(clean)) return 'audio';
         return 'image';
       }
 
@@ -475,7 +483,9 @@
         const resolvedMediaType = detectMediaType(fullUrl, mediaType);
         const mediaMarkup = resolvedMediaType === 'video'
           ? `<video src="${fullUrl}" controls preload="metadata" playsinline></video>`
-          : `<img src="${fullUrl}" alt="${name}" loading="lazy" />`;
+          : resolvedMediaType === 'audio'
+            ? `<audio src="${fullUrl}" controls preload="metadata"></audio>`
+            : `<img src="${fullUrl}" alt="${name}" loading="lazy" />`;
         card.dataset.url = fullUrl;
         const sourceText = sourceUrl ? String(sourceUrl) : '';
         const sourceIsHttp = /^https?:\/\//i.test(sourceText);
@@ -492,7 +502,7 @@
           <a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${fullUrl}</a>
           <div class="card-actions">
             <button type="button" class="copy-btn">Copy URL</button>
-            <button type="button" class="delete-btn">Delete Image</button>
+            <button type="button" class="delete-btn">Delete Media</button>
           </div>
           <p class="card-lock-note">Locked: login required to view/copy links.</p>
         `;
@@ -575,7 +585,7 @@
 
       async function fetchCloudinaryHistory(config) {
         if (!config.cloudinaryCloudName || !config.cloudinaryListTag) return [];
-        const types = ['image', 'video'];
+        const types = ['image', 'video', 'raw'];
         const collected = [];
         for (const resourceType of types) {
           const listUrl = `https://res.cloudinary.com/${encodeURIComponent(config.cloudinaryCloudName)}/${resourceType}/list/${encodeURIComponent(config.cloudinaryListTag)}.json?t=${Date.now()}`;
@@ -593,7 +603,7 @@
               name: fileName,
               uploadedAt: item.created_at || null,
               sourceUrl: null,
-              mediaType: resourceType
+              mediaType: resourceType === 'raw' ? detectMediaType(url, null) : resourceType
             });
           }
         }
@@ -602,7 +612,7 @@
       }
 
       function makeTrackedCloudinaryEntry(url, uploadedAt, mediaType = 'image') {
-        let fileName = 'cloudinary-image';
+        let fileName = 'cloudinary-media';
         try {
           const u = new URL(url);
           const last = u.pathname.split('/').filter(Boolean).pop() || fileName;
@@ -610,8 +620,13 @@
         } catch {
           // keep fallback name
         }
+        const mediaFolder = mediaType === 'video'
+          ? 'videos'
+          : mediaType === 'audio'
+            ? 'audios'
+            : 'images';
         return {
-          path: `cloudinary/${mediaType === 'video' ? 'videos' : 'images'}/${fileName}`,
+          path: `cloudinary/${mediaFolder}/${fileName}`,
           displayName: fileName,
           uploadedAt: uploadedAt || new Date().toISOString(),
           sourceUrl: `cloudinary:${fileName}`,
@@ -842,7 +857,7 @@
           uploadBtn.disabled = true;
           setStatus('Website upload is off because Cloudinary is not configured. Use Open GitHub Upload.');
         } else if (hasCloudinary && !hasPasscode) {
-          setStatus('Upload ready. This sends image or video to Cloudinary and returns a hosted URL you can use in any project.', true);
+          setStatus('Upload ready. This sends image, video, or audio to Cloudinary and returns a hosted URL you can use in any project.', true);
         } else if (hasCloudinary && hasPasscode) {
           setStatus(unlocked ? 'Upload unlocked (session active).' : 'Upload locked. Use Login (top-right) to unlock.', unlocked);
         } else {
@@ -964,14 +979,15 @@
 
           const file = selectedFile || (fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
           if (!file) {
-            setStatus('Select or drag an image or video file first.');
+            setStatus('Select or drag an image, video, or audio file first.');
             return;
           }
           const mimeType = String(file.type || '');
           const isImage = mimeType.startsWith('image/');
           const isVideo = mimeType.startsWith('video/');
-          if (!isImage && !isVideo) {
-            setStatus('Only image or video files are allowed.');
+          const isAudio = mimeType.startsWith('audio/');
+          if (!isImage && !isVideo && !isAudio) {
+            setStatus('Only image, video, or audio files are allowed.');
             return;
           }
 
@@ -983,7 +999,11 @@
             if (!url) throw new Error('No URL returned by Cloudinary.');
 
             const uploadedAt = result.created_at || new Date().toISOString();
-            const mediaType = result.resource_type === 'video' || isVideo ? 'video' : 'image';
+            const mediaType = result.resource_type === 'video' || isVideo
+              ? (isAudio ? 'audio' : 'video')
+              : result.resource_type === 'image' || isImage
+                ? 'image'
+                : (isAudio ? 'audio' : detectMediaType(url, null));
             renderCardIfNew(url, file.name, uploadedAt, null, true, mediaType);
             addLocalUpload(config, {
               url,
